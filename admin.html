@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Administração Leaderboard Sparta</title>
+  <title>Admin Sparta</title>
   <style>
-    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; margin: 2rem; background: #111; color: #fff; }
+    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; background: #111; color: #fff; margin: 0; padding: 2rem; }
     h1, h2 { text-align: center; }
-    input, select, button { margin: 0.5rem 0; padding: 0.5rem; width: 90%; max-width: 400px; display: block; margin-left: auto; margin-right: auto; }
-    .card { border: 1px solid #444; padding: 1rem; background: #222; margin: 1rem auto; border-radius: 8px; max-width: 600px; }
+    input, select, button { display: block; margin: 0.5rem auto; padding: 0.5rem; width: 90%; max-width: 400px; }
+    .card { background: #222; padding: 1rem; margin: 1rem auto; border: 1px solid #444; border-radius: 8px; max-width: 600px; }
   </style>
 </head>
 <body>
-  <h1>Administração Leaderboard</h1>
+  <h1>Administração Sparta</h1>
 
   <h2>Atualizar Prova Atual</h2>
   <form id="provaForm">
     <input type="text" id="provaInput" placeholder="Nome da Prova">
     <select id="tipoProvaInput">
-      <option value="">Selecione o tipo</option>
+      <option value="">Tipo da Prova</option>
       <option value="AMRAP">AMRAP</option>
       <option value="CARGA">Carga</option>
       <option value="FOR TIME">For Time</option>
@@ -28,10 +28,10 @@
 
   <h2>Adicionar Nova Dupla</h2>
   <form id="addForm">
-    <input type="text" id="teamName" placeholder="Nome da dupla" required>
-    <input type="text" id="boxName" value="Sparta" required>
+    <input type="text" id="teamName" placeholder="Nome da Dupla" required>
+    <input type="text" id="boxName" placeholder="Box" value="Sparta" required>
     <select id="category" required>
-      <option value="">Selecione a categoria</option>
+      <option value="">Categoria</option>
       <option value="RX Masculino">RX Masculino</option>
       <option value="Intermediário Masculino">Intermediário Masculino</option>
       <option value="Intermediário Feminino">Intermediário Feminino</option>
@@ -41,7 +41,7 @@
     <button type="submit">Adicionar Dupla</button>
   </form>
 
-  <h2>Duplas</h2>
+  <h2>Duplas Cadastradas</h2>
   <div id="teamsList"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>

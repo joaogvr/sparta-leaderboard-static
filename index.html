@@ -5,16 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leaderboard Sparta</title>
   <style>
-    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; margin: 0; background: #000; color: #fff; }
-    header { background: #000; padding: 1rem; text-align: center; border-bottom: 2px solid red; }
+    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; background: #000; color: #fff; margin: 0; }
+    header { text-align: center; padding: 1rem; border-bottom: 2px solid red; }
     header img { width: 100px; }
-    h1 { margin-top: 0.5rem; text-transform: uppercase; }
-    nav { margin: 1rem; text-align: center; }
+    nav { text-align: center; margin: 1rem; }
     nav a { color: #ccc; margin: 0 1rem; text-decoration: none; }
-    nav a:hover { color: #fff; text-decoration: underline; }
-    .tabs { display: flex; justify-content: center; flex-wrap: wrap; }
-    .tab { padding: 1rem; cursor: pointer; background: #111; margin: 0.2rem; border-radius: 5px; }
-    .tab.active { background: red; color: white; font-weight: bold; }
+    nav a:hover { color: #fff; }
+    .tabs { display: flex; justify-content: center; flex-wrap: wrap; margin: 1rem; }
+    .tab { padding: 0.8rem 1.2rem; margin: 0.3rem; background: #111; border-radius: 5px; cursor: pointer; }
+    .tab.active { background: red; color: #fff; font-weight: bold; }
     .content { padding: 1rem; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
     th, td { padding: 0.8rem; border: 1px solid #444; text-align: center; }
@@ -24,9 +23,9 @@
 </head>
 <body>
   <header>
-    <img src="https://i.imgur.com/S1eFEGv.png" alt="Sparta">
+    <img src="https://i.imgur.com/S1eFEGv.png" alt="Logo Sparta">
     <h1>Leaderboard Sparta</h1>
-    <div id="provaAtual" style="font-weight: bold; margin-top: 10px;">Prova Atual: Aguardando Atualização</div>
+    <div id="provaAtual" style="margin-top:10px; font-weight:bold;"></div>
   </header>
 
   <nav>
