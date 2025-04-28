@@ -14,47 +14,55 @@ function initFirebase() {
   database = firebase.database();
 }
 
-function renderLeaderboard() {
-  const container = document.getElementById('leaderboard');
-
-  database.ref('/provaAtual').on('value', (snapshot) => {
-    const prova = snapshot.val();
-    if (prova && document.getElementById('provaAtual')) {
-      document.getElementById('provaAtual').textContent = prova;
-    }
-  });
-
-  database.ref('/times').on('value', (snapshot) => {
+function setupTabs() {
+  database.ref('/times').once('value').then(snapshot => {
     const data = snapshot.val() || {};
-    container.innerHTML = '';
+    const tabs = document.getElementById('tabs');
+    tabs.innerHTML = '';
 
     Object.keys(data).forEach(category => {
-      const section = document.createElement('section');
-      section.innerHTML = `<h2>${category}</h2>`;
-      const ranking = Object.values(data[category])
-        .map(team => ({
-          name: team.name,
-          score: calculateScore(team)
-        }))
-        .sort((a, b) => b.score - a.score);
+      const tab = document.createElement('div');
+      tab.className = 'tab';
+      tab.innerText = category;
+      tab.onclick = () => renderLeaderboard(category);
+      tabs.appendChild(tab);
+    });
 
-      const ol = document.createElement('ol');
-      ranking.forEach((team, idx) => {
-        const li = document.createElement('li');
-        li.textContent = `${idx + 1}. ${team.name} - ${team.score} pts`;
-        ol.appendChild(li);
-      });
+    const firstTab = document.querySelector('.tab');
+    if (firstTab) { firstTab.click(); firstTab.classList.add('active'); }
+  });
 
-      section.appendChild(ol);
-      container.appendChild(section);
+  database.ref('/provaAtual').on('value', snapshot => {
+    document.getElementById('provaAtual').innerText = "Prova Atual: " + (snapshot.val() || "Aguardando Atualização");
+  });
+}
+
+function renderLeaderboard(category) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  Array.from(document.getElementsByClassName('tab')).find(t => t.innerText === category)?.classList.add('active');
+
+  const container = document.getElementById('leaderboard');
+  database.ref(`/times/${category}`).once('value').then(snapshot => {
+    const data = snapshot.val() || {};
+    container.innerHTML = '<table><thead><tr><th>Dupla</th><th>Box</th><th>Prova 1</th><th>Prova 2</th><th>Prova 3</th><th>Total</th></tr></thead><tbody></tbody></table>';
+    const tbody = container.querySelector('tbody');
+
+    const list = Object.values(data).map(team => ({
+      ...team,
+      total: calculateTotal(team)
+    })).sort((a, b) => b.total - a.total);
+
+    list.forEach(team => {
+      const row = document.createElement('tr');
+      row.innerHTML = `<td>${team.name}</td><td>${team.box}</td><td>${team.prova1 ?? ''}</td><td>${team.prova2 ?? ''}</td><td>${team.prova3 ?? ''}</td><td>${team.total}</td>`;
+      tbody.appendChild(row);
     });
   });
 }
 
 function renderAdmin() {
   const container = document.getElementById('teamsList');
-
-  database.ref('/times').on('value', (snapshot) => {
+  database.ref('/times').on('value', snapshot => {
     const data = snapshot.val() || {};
     container.innerHTML = '';
 
@@ -67,10 +75,10 @@ function renderAdmin() {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-          <strong>${team.name}</strong><br>
-          For Time (min): <input type="number" value="${team.forTime ?? ''}" onchange="updateField('${category}', '${id}', 'forTime', this.value)"><br>
-          Carga Máx (kg): <input type="number" value="${team.carga ?? ''}" onchange="updateField('${category}', '${id}', 'carga', this.value)"><br>
-          AMRAP (reps): <input type="number" value="${team.amrap ?? ''}" onchange="updateField('${category}', '${id}', 'amrap', this.value)"><br>
+          <strong>${team.name}</strong> (${team.box})<br>
+          Prova 1: <input type="number" value="${team.prova1 ?? ''}" onchange="updateField('${category}', '${id}', 'prova1', this.value)"><br>
+          Prova 2: <input type="number" value="${team.prova2 ?? ''}" onchange="updateField('${category}', '${id}', 'prova2', this.value)"><br>
+          Prova 3: <input type="number" value="${team.prova3 ?? ''}" onchange="updateField('${category}', '${id}', 'prova3', this.value)"><br>
           <button onclick="removeTeam('${category}', '${id}')">Remover</button>
         `;
         container.appendChild(card);
@@ -94,12 +102,13 @@ function renderAdmin() {
 }
 
 function addTeam() {
-  const name = document.getElementById('newTeamName').value.trim();
-  const category = document.getElementById('newCategory').value.trim();
-  if (!name || !category) return;
+  const name = document.getElementById('teamName').value.trim();
+  const box = document.getElementById('boxName').value.trim();
+  const category = document.getElementById('category').value.trim();
+  if (!name || !box || !category) return;
 
   const id = Date.now().toString();
-  database.ref(`/times/${category}/${id}`).set({ name });
+  database.ref(`/times/${category}/${id}`).set({ name, box });
 
   document.getElementById('addForm').reset();
 }
@@ -114,15 +123,6 @@ function removeTeam(category, id) {
   database.ref(`/times/${category}/${id}`).remove();
 }
 
-function calculateScore(team) {
-  let score = 0;
-  if (team.forTime !== undefined) score += scorePosition('forTime', team.forTime);
-  if (team.carga !== undefined) score += scorePosition('carga', team.carga);
-  if (team.amrap !== undefined) score += scorePosition('amrap', team.amrap);
-  return score;
-}
-
-function scorePosition(type, value) {
-  if (type === 'forTime') return -value;
-  return value;
+function calculateTotal(team) {
+  return (team.prova1 || 0) + (team.prova2 || 0) + (team.prova3 || 0);
 }

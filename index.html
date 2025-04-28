@@ -3,34 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leaderboard - Sparta</title>
+  <title>Leaderboard Sparta</title>
   <style>
-    body { font-family: Arial Black, Arial, sans-serif; margin: 0; background: white; color: black; text-align: center; }
-    header { padding: 1rem; border-bottom: 4px solid red; }
-    header img { max-width: 120px; margin-bottom: 10px; }
-    h1 { font-size: 2rem; margin: 0.5rem 0; }
-    .prova-info { margin: 1rem 0; font-size: 1.5rem; font-weight: bold; }
-    section { margin-top: 2rem; }
-    ol { font-size: 1.2rem; padding: 0; list-style-position: inside; }
-    li { margin: 0.5rem 0; }
-    h2 { border-top: 2px solid red; margin-top: 2rem; padding-top: 1rem; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #111; }
+    header { background: #fff; padding: 1rem; border-bottom: 2px solid #e00; text-align: center; }
+    header img { width: 120px; }
+    h1 { font-size: 1.8rem; margin: 0.5rem 0; }
+    .tabs { display: flex; justify-content: center; flex-wrap: wrap; background: #f4f4f4; }
+    .tab { padding: 0.8rem 1.2rem; margin: 0.2rem; background: #eee; border-radius: 6px; cursor: pointer; }
+    .tab.active { background: #e00; color: #fff; font-weight: bold; }
+    .content { padding: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.8rem; text-align: center; }
+    th { background: #eee; }
   </style>
 </head>
 <body>
   <header>
     <img src="https://i.imgur.com/S1eFEGv.png" alt="Logo Sparta">
-    <h1>Leaderboard - Campeonato Interno</h1>
-    <div class="prova-info" id="provaAtual">Prova 1: 300 Double Under, 10 Clean and Jerk (80/65kg), Max Burpee Over Bar</div>
+    <h1>Leaderboard - Campeonato Sparta</h1>
+    <div id="provaAtual" style="margin-top: 10px; font-weight: bold;">Prova Atual: Aguardando Atualização</div>
   </header>
 
-  <div id="leaderboard"></div>
+  <div class="tabs" id="tabs"></div>
+
+  <div class="content" id="leaderboard"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="script.js"></script>
   <script>
     initFirebase();
-    renderLeaderboard();
+    setupTabs();
   </script>
 </body>
 </html>
