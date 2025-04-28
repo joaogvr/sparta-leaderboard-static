@@ -5,25 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Administração Leaderboard Sparta</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; background: #f9fafb; }
-    h1 { text-align: center; }
-    input, button, select { margin: 0.5rem 0; padding: 0.5rem; width: 100%; max-width: 400px; }
-    .card { border: 1px solid #ccc; padding: 1rem; margin: 1rem 0; background: white; border-radius: 8px; }
+    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; margin: 2rem; background: #111; color: #fff; }
+    h1, h2 { text-align: center; }
+    input, select, button { margin: 0.5rem 0; padding: 0.5rem; width: 90%; max-width: 400px; display: block; margin-left: auto; margin-right: auto; }
+    .card { border: 1px solid #444; padding: 1rem; background: #222; margin: 1rem auto; border-radius: 8px; max-width: 600px; }
   </style>
 </head>
 <body>
   <h1>Administração Leaderboard</h1>
 
-  <h2>Atualizar Nome da Prova Atual</h2>
+  <h2>Atualizar Prova Atual</h2>
   <form id="provaForm">
-    <input type="text" id="provaInput" placeholder="Ex: Prova 1 - For Time">
+    <input type="text" id="provaInput" placeholder="Nome da Prova">
+    <select id="tipoProvaInput">
+      <option value="">Selecione o tipo</option>
+      <option value="AMRAP">AMRAP</option>
+      <option value="CARGA">Carga</option>
+      <option value="FOR TIME">For Time</option>
+    </select>
     <button type="submit">Atualizar Prova</button>
   </form>
 
   <h2>Adicionar Nova Dupla</h2>
   <form id="addForm">
     <input type="text" id="teamName" placeholder="Nome da dupla" required>
-    <input type="text" id="boxName" placeholder="Box" value="Sparta" required>
+    <input type="text" id="boxName" value="Sparta" required>
     <select id="category" required>
       <option value="">Selecione a categoria</option>
       <option value="RX Masculino">RX Masculino</option>

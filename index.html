@@ -5,30 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leaderboard Sparta</title>
   <style>
-    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; margin: 0; padding: 0; background: #000; color: #fff; }
-    header { background: #000; padding: 1rem; border-bottom: 2px solid #e00; text-align: center; }
-    header img { width: 120px; }
-    h1 { font-size: 1.8rem; margin: 0.5rem 0; text-transform: uppercase; }
-    .tabs { display: flex; justify-content: center; flex-wrap: wrap; background: #111; }
-    .tab { padding: 0.8rem 1.2rem; margin: 0.2rem; background: #222; border-radius: 6px; cursor: pointer; color: #ccc; }
-    .tab.active { background: #e00; color: #fff; font-weight: bold; }
+    body { font-family: 'Helvetica Neue', 'Open Sans', sans-serif; margin: 0; background: #000; color: #fff; }
+    header { background: #000; padding: 1rem; text-align: center; border-bottom: 2px solid red; }
+    header img { width: 100px; }
+    h1 { margin-top: 0.5rem; text-transform: uppercase; }
+    nav { margin: 1rem; text-align: center; }
+    nav a { color: #ccc; margin: 0 1rem; text-decoration: none; }
+    nav a:hover { color: #fff; text-decoration: underline; }
+    .tabs { display: flex; justify-content: center; flex-wrap: wrap; }
+    .tab { padding: 1rem; cursor: pointer; background: #111; margin: 0.2rem; border-radius: 5px; }
+    .tab.active { background: red; color: white; font-weight: bold; }
     .content { padding: 1rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: #000; }
-    th, td { border: 1px solid #555; padding: 0.8rem; text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.8rem; border: 1px solid #444; text-align: center; }
     th { background: #111; text-transform: uppercase; }
     tr:hover { background: #222; }
-    #provaAtual { font-weight: bold; text-transform: uppercase; }
   </style>
 </head>
 <body>
   <header>
-    <img src="https://i.imgur.com/S1eFEGv.png" alt="Logo Sparta">
-    <h1>Leaderboard - Campeonato Sparta</h1>
-    <div id="provaAtual" style="margin-top: 10px;">Prova Atual: Aguardando Atualização</div>
+    <img src="https://i.imgur.com/S1eFEGv.png" alt="Sparta">
+    <h1>Leaderboard Sparta</h1>
+    <div id="provaAtual" style="font-weight: bold; margin-top: 10px;">Prova Atual: Aguardando Atualização</div>
   </header>
 
-  <div class="tabs" id="tabs"></div>
+  <nav>
+    <a href="index.html">Leaderboard</a>
+    <a href="workouts.html">Workouts</a>
+  </nav>
 
+  <div class="tabs" id="tabs"></div>
   <div class="content" id="leaderboard"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
