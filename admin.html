@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administração - Leaderboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; background-color: #f9fafb; }
+    h1 { text-align: center; }
+    .card { border: 1px solid #ccc; padding: 1rem; margin: 1rem 0; background: white; border-radius: 8px; }
+    .grid { display: grid; gap: 1rem; }
+    input { margin: 0.3rem 0; padding: 0.3rem; width: 200px; }
+    button { margin-top: 0.5rem; padding: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Administração - Lançar Resultados</h1>
+
+  <h2>Adicionar Nova Dupla</h2>
+  <form id="addForm">
+    <input type="text" id="newTeamName" placeholder="Nome da dupla" required>
+    <input type="text" id="newCategory" placeholder="Categoria" required>
+    <button type="submit">Adicionar Dupla</button>
+  </form>
+
+  <h2>Duplas Existentes</h2>
+  <div id="teamsList"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="script.js"></script>
+  <script>
+    initFirebase();
+    renderAdmin();
+  </script>
+</body>
+</html>
