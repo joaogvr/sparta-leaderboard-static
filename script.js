@@ -16,7 +16,15 @@ function initFirebase() {
 
 function renderLeaderboard() {
   const container = document.getElementById('leaderboard');
-  database.ref('/').on('value', (snapshot) => {
+
+  database.ref('/provaAtual').on('value', (snapshot) => {
+    const prova = snapshot.val();
+    if (prova && document.getElementById('provaAtual')) {
+      document.getElementById('provaAtual').textContent = prova;
+    }
+  });
+
+  database.ref('/times').on('value', (snapshot) => {
     const data = snapshot.val() || {};
     container.innerHTML = '';
 
@@ -45,7 +53,8 @@ function renderLeaderboard() {
 
 function renderAdmin() {
   const container = document.getElementById('teamsList');
-  database.ref('/').on('value', (snapshot) => {
+
+  database.ref('/times').on('value', (snapshot) => {
     const data = snapshot.val() || {};
     container.innerHTML = '';
 
@@ -73,6 +82,15 @@ function renderAdmin() {
     e.preventDefault();
     addTeam();
   };
+
+  document.getElementById('provaForm').onsubmit = function(e) {
+    e.preventDefault();
+    const prova = document.getElementById('provaInput').value.trim();
+    if (prova) {
+      database.ref('/provaAtual').set(prova);
+      document.getElementById('provaForm').reset();
+    }
+  };
 }
 
 function addTeam() {
@@ -81,7 +99,7 @@ function addTeam() {
   if (!name || !category) return;
 
   const id = Date.now().toString();
-  database.ref(`/${category}/${id}`).set({ name });
+  database.ref(`/times/${category}/${id}`).set({ name });
 
   document.getElementById('addForm').reset();
 }
@@ -89,11 +107,11 @@ function addTeam() {
 function updateField(category, id, field, value) {
   const update = {};
   update[field] = parseFloat(value) || 0;
-  database.ref(`/${category}/${id}`).update(update);
+  database.ref(`/times/${category}/${id}`).update(update);
 }
 
 function removeTeam(category, id) {
-  database.ref(`/${category}/${id}`).remove();
+  database.ref(`/times/${category}/${id}`).remove();
 }
 
 function calculateScore(team) {
@@ -105,6 +123,6 @@ function calculateScore(team) {
 }
 
 function scorePosition(type, value) {
-  if (type === 'forTime') return -value; // menor tempo é melhor
-  return value; // maior valor é melhor
+  if (type === 'forTime') return -value;
+  return value;
 }

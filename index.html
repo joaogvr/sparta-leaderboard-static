@@ -1,18 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leaderboard - Visualização</title>
+  <title>Leaderboard - Sparta</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; background-color: #f9fafb; }
-    h1 { text-align: center; }
-    section { margin-bottom: 3rem; }
-    ol { font-size: 1.2rem; }
+    body { font-family: Arial Black, Arial, sans-serif; margin: 0; background: white; color: black; text-align: center; }
+    header { padding: 1rem; border-bottom: 4px solid red; }
+    header img { max-width: 120px; margin-bottom: 10px; }
+    h1 { font-size: 2rem; margin: 0.5rem 0; }
+    .prova-info { margin: 1rem 0; font-size: 1.5rem; font-weight: bold; }
+    section { margin-top: 2rem; }
+    ol { font-size: 1.2rem; padding: 0; list-style-position: inside; }
+    li { margin: 0.5rem 0; }
+    h2 { border-top: 2px solid red; margin-top: 2rem; padding-top: 1rem; }
   </style>
 </head>
 <body>
-  <h1>Leaderboard - Público</h1>
+  <header>
+    <img src="https://i.imgur.com/S1eFEGv.png" alt="Logo Sparta">
+    <h1>Leaderboard - Campeonato Interno</h1>
+    <div class="prova-info" id="provaAtual">Prova 1: 300 Double Under, 10 Clean and Jerk (80/65kg), Max Burpee Over Bar</div>
+  </header>
+
   <div id="leaderboard"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>

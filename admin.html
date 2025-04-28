@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Administração - Leaderboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; background-color: #f9fafb; }
+    body { font-family: Arial, sans-serif; margin: 2rem; background: #f9fafb; }
     h1 { text-align: center; }
+    input, button { margin: 0.5rem 0; padding: 0.5rem; width: 90%; max-width: 400px; }
     .card { border: 1px solid #ccc; padding: 1rem; margin: 1rem 0; background: white; border-radius: 8px; }
     .grid { display: grid; gap: 1rem; }
-    input { margin: 0.3rem 0; padding: 0.3rem; width: 200px; }
-    button { margin-top: 0.5rem; padding: 0.5rem; }
   </style>
 </head>
 <body>
   <h1>Administração - Lançar Resultados</h1>
+
+  <h2>Atualizar Nome da Prova</h2>
+  <form id="provaForm">
+    <input type="text" id="provaInput" placeholder="Nome da Prova Atual" required>
+    <button type="submit">Atualizar Prova</button>
+  </form>
 
   <h2>Adicionar Nova Dupla</h2>
   <form id="addForm">
