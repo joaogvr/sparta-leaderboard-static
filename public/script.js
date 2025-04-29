@@ -25,11 +25,18 @@ function setupTabs() {
       const btn = document.createElement("div");
       btn.className = "tab";
       btn.innerText = child.key;
-      btn.onclick = () => renderLeaderboard(child.key);
+      btn.onclick = () => {
+        // Remove active de todos
+        document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+        // Adiciona active na clicada
+        btn.classList.add("active");
+        renderLeaderboard(child.key);
+      };
       tabs.appendChild(btn);
     });
   });
 }
+
 
 // RENDERIZAR LEADERBOARD
 function renderLeaderboard(category) {
@@ -162,7 +169,7 @@ function renderAdmin() {
             <p>Categoria: ${category}</p>
             <div>
               ${[1,2,3].map(i => `
-                <input type="number" id="res-${category}-${team}-p${i}" placeholder="Resultado P${i}" value="${data['prova'+i]?.resultado ?? ''}">
+                <input type="text" id="res-${category}-${team}-p${i}" placeholder="Resultado P${i}" value="${data['prova'+i]?.resultado ?? ''}">
               `).join('')}
               <button onclick="saveResults('${category}', '${team}')">Salvar Resultados</button>
               <button style="background: darkred; margin-top: 5px;" onclick="deleteTeam('${category}', '${team}')">Excluir Dupla</button>
