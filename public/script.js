@@ -44,6 +44,7 @@ function renderLeaderboard(category) {
     snapshot.forEach(teamSnap => {
       const team = teamSnap.val();
       team.name = teamSnap.key;
+      team.category = category; // adiciona a categoria à equipe
       teams.push(team);
     });
 
@@ -64,8 +65,8 @@ function renderLeaderboard(category) {
           html += `<tr><td>${t.name}</td><td>${t.box}</td>`;
           for (let i = 1; i <= 3; i++) {
             let result = t['prova' + i]?.resultado ?? '-';
-            if (result !== '-' && provasTipos['prova' + i]) {
-              const tipo = provasTipos['prova' + i];
+            const tipo = provasTipos['prova' + i];
+            if (result !== '-' && tipo) {
               if (tipo === "AMRAP") result += " reps";
               if (tipo === "CARGA") result += " kg";
             }
@@ -82,6 +83,7 @@ function renderLeaderboard(category) {
 }
 
 
+
 // CALCULAR RANKINGS, PONTOS E TOTAL
 async function calculateRanking(teams) {
   const provas = {};
@@ -94,57 +96,58 @@ async function calculateRanking(teams) {
 
     const filtered = teams.filter(t => t['prova' + prova]?.resultado != null);
 
-    filtered.forEach(team => {
-      let resultado = team['prova' + prova].resultado;
+    filtered.forEach(t => {
+      let resultado = t['prova' + prova].resultado;
 
-      if (tipo === "FOR TIME" && typeof resultado === "string") {
+      if (tipo === "FOR TIME") {
         const parts = resultado.split(":");
         if (parts.length === 2) {
           const minutos = parseInt(parts[0], 10);
           const segundos = parseInt(parts[1], 10);
-          resultado = minutos * 60 + segundos;
+          t['prova' + prova].resultado_convertido = (minutos * 60) + segundos;
         } else {
-          resultado = parseInt(resultado, 10);
+          t['prova' + prova].resultado_convertido = parseFloat(resultado);
         }
       } else {
-        if (tipo === "FOR TIME" && typeof resultado === "string") {
-          const parts = resultado.split(":");
-          if (parts.length === 2) {
-            const minutos = parseInt(parts[0], 10);
-            const segundos = parseInt(parts[1], 10);
-            resultado = minutos * 60 + segundos;
-          } else {
-            resultado = parseInt(resultado, 10);
-          }
-        } else {
-          // Aqui a melhoria:
-          resultado = parseFloat(resultado.toString().replace(/[^\d.]/g, ''));
-}
-
+        t['prova' + prova].resultado_convertido = parseFloat(resultado);
       }
-
-      team['prova' + prova].resultadoConvertido = resultado;
     });
 
     if (tipo === "FOR TIME") {
-      filtered.sort((a, b) => a['prova' + prova].resultadoConvertido - b['prova' + prova].resultadoConvertido);
+      filtered.sort((a, b) => a['prova' + prova].resultado_convertido - b['prova' + prova].resultado_convertido);
     } else {
-      filtered.sort((a, b) => b['prova' + prova].resultadoConvertido - a['prova' + prova].resultadoConvertido);
+      filtered.sort((a, b) => b['prova' + prova].resultado_convertido - a['prova' + prova].resultado_convertido);
     }
 
     filtered.forEach((team, index) => {
-      team['prova' + prova].rank = index + 1;
-      team['prova' + prova].pontos = pontosPorPosicao(index + 1);
+      const rank = index + 1;
+      const pontos = pontosPorPosicao(rank);
+      const path = `categories/${team.category}/teams/${team.name}/prova${prova}`;
+
+      team['prova' + prova].rank = rank;
+      team['prova' + prova].pontos = pontos;
+
+      // salva no banco
+      db.ref(path).update({
+        rank: rank,
+        pontos: pontos
+      });
     });
   }
 
+  // total de pontos
   teams.forEach(t => {
     t.total = [1, 2, 3].reduce((acc, i) => acc + (t['prova' + i]?.pontos ?? 0), 0);
+    const totalPath = `categories/${t.category}/teams/${t.name}`;
+    db.ref(totalPath).update({
+      total: t.total
+    });
   });
 
   teams.sort((a, b) => b.total - a.total);
   return teams;
 }
+
 
 // PONTUAÇÃO ESTILO GAMES
 function pontosPorPosicao(pos) {
