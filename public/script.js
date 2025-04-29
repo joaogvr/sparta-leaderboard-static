@@ -141,7 +141,11 @@ function renderLeaderboard(category) {
 // CALCULAR RANKS
 async function calculateRanking(teams) {
   const snapshot = await db.ref("provas").once("value");
-  const provas = {};
+  const provas = {
+    prova1: snapshot.child("prova1").val(),
+    prova2: snapshot.child("prova2").val(),
+    prova3: snapshot.child("prova3").val(),
+  };
   snapshot.forEach(p => provas[p.key] = p.val());
 
   for (let prova = 1; prova <= 3; prova++) {
