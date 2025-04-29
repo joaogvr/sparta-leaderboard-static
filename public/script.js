@@ -81,6 +81,7 @@ function renderLeaderboard(category) {
   });
 }
 
+
 // CALCULAR RANKINGS, PONTOS E TOTAL
 async function calculateRanking(teams) {
   const provas = {};
