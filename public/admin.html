@@ -16,11 +16,16 @@
       margin-bottom: 2rem;
       text-align: center;
     }
-    form {
+    .insercao-form {
+      background: #111;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+    }
+    .insercao-form form {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
-      margin-bottom: 2rem;
       align-items: center;
       justify-content: center;
     }
@@ -84,27 +89,29 @@
 <body>
   <h1>Painel de Administração</h1>
 
-  <form id="addForm">
-    <input id="teamName" placeholder="Nome da Dupla" />
-    <input id="boxName" placeholder="Box" />
-    <select id="category">
-      <option>RX Masculino</option>
-      <option>Intermediário Feminino</option>
-      <option>Scale Feminino</option>
-      <option>Scale Masculino</option>
-    </select>
-    <button type="submit">Adicionar Dupla</button>
-  </form>
+  <div class="insercao-form">
+    <form id="addForm">
+      <input id="teamName" placeholder="Nome da Dupla" />
+      <input id="boxName" placeholder="Box" />
+      <select id="category">
+        <option>RX Masculino</option>
+        <option>Intermediário Feminino</option>
+        <option>Scale Feminino</option>
+        <option>Scale Masculino</option>
+      </select>
+      <button type="submit">Adicionar Dupla</button>
+    </form>
 
-  <form id="provaForm">
-    <input id="provaInput" placeholder="Nome da Prova" />
-    <select id="tipoProvaInput">
-      <option value="AMRAP">AMRAP</option>
-      <option value="CARGA">CARGA</option>
-      <option value="FOR TIME">FOR TIME</option>
-    </select>
-    <button type="submit">Cadastrar Prova</button>
-  </form>
+    <form id="provaForm">
+      <input id="provaInput" placeholder="Nome da Prova" />
+      <select id="tipoProvaInput">
+        <option value="AMRAP">AMRAP</option>
+        <option value="CARGA">CARGA</option>
+        <option value="FOR TIME">FOR TIME</option>
+      </select>
+      <button type="submit">Cadastrar Prova</button>
+    </form>
+  </div>
 
   <div id="teamsList"></div>
 
