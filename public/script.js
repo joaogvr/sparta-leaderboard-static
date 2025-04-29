@@ -197,36 +197,48 @@ function renderAdmin() {
   }
 
   window.saveResults = async function(category, team) {
-    const updates = {};
-    const provasSnapshot = await db.ref("provas").once("value");
-    const provasTipos = {};
-    provasSnapshot.forEach(child => {
-      provasTipos[child.key] = child.val().tipo;
-    });
+  const updates = {};
+  const provasSnapshot = await db.ref("provas").once("value");
+  const provasTipos = {};
+  provasSnapshot.forEach(child => {
+    provasTipos[child.key] = child.val().tipo;
+  });
 
-    for (let i = 1; i <= 3; i++) {
-      const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
-      if (val) {
-        const tipo = provasTipos['prova' + i];
-        if (tipo === "FOR TIME") {
-          updates[`prova${i}/resultado`] = val;
-        } else {
-          updates[`prova${i}/resultado`] = parseFloat(val);
-        }
+  for (let i = 1; i <= 3; i++) {
+    const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
+    if (val) {
+      const tipo = provasTipos['prova' + i];
+      if (tipo === "FOR TIME") {
+        updates[`prova${i}/resultado`] = val;
+      } else {
+        updates[`prova${i}/resultado`] = parseFloat(val);
       }
     }
+  }
 
-    db.ref(`categories/${category}/teams/${team}`).update(updates).then(() => {
-      alert("Resultados atualizados!");
-      loadTeams();
-      setupTabs();
-      renderLeaderboard(category);
-      const activeTab = document.querySelector('.tab.active')?.innerText;
-      if (activeTab) {
-        renderLeaderboard(activeTab);
-      }
-    });
-  };
+  await db.ref(`categories/${category}/teams/${team}`).update(updates);
+
+  alert("Resultados atualizados!");
+
+  // ⚠️ CHAMAR O CÁLCULO DE RANKING AQUI
+  const snapshot = await db.ref(`categories/${category}/teams`).once("value");
+  const teams = [];
+  snapshot.forEach(teamSnap => {
+    const data = teamSnap.val();
+    data.name = teamSnap.key;
+    data.category = category;
+    teams.push(data);
+  });
+
+  await calculateRanking(teams);
+
+  loadTeams();
+  setupTabs();
+  const activeTab = document.querySelector('.tab.active')?.innerText;
+  if (activeTab) {
+    renderLeaderboard(activeTab);
+  }
+};
 
   window.deleteTeam = function(category, team) {
     if (confirm(`Deseja remover a dupla "${team}" da categoria "${category}"?`)) {
