@@ -106,7 +106,20 @@ async function calculateRanking(teams) {
           resultado = parseInt(resultado, 10);
         }
       } else {
-        resultado = parseFloat(resultado);
+        if (tipo === "FOR TIME" && typeof resultado === "string") {
+          const parts = resultado.split(":");
+          if (parts.length === 2) {
+            const minutos = parseInt(parts[0], 10);
+            const segundos = parseInt(parts[1], 10);
+            resultado = minutos * 60 + segundos;
+          } else {
+            resultado = parseInt(resultado, 10);
+          }
+        } else {
+          // Aqui a melhoria:
+          resultado = parseFloat(resultado.toString().replace(/[^\d.]/g, ''));
+}
+
       }
 
       team['prova' + prova].resultadoConvertido = resultado;
