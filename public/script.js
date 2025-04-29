@@ -50,38 +50,62 @@ function renderLeaderboard(category) {
       teams.push(team);
     });
 
-    calculateRanking(teams).then(async sorted => {
-      // Primeiro pegamos os tipos de prova
-      const provasSnapshot = await db.ref("provas").once("value");
-      const provasTipos = {};
-      provasSnapshot.forEach(child => {
-        provasTipos[child.key] = child.val().tipo;
-      });
+    async function calculateRanking(teams) {
+  const provas = {};
+  const snapshot = await db.ref("provas").once("value");
+  snapshot.forEach(p => provas[p.key] = p.val());
 
-      let html = "<table><thead><tr><th>Dupla</th><th>Box</th>";
-      for (let i = 1; i <= 3; i++) {
-        html += `<th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>`;
-      }
-      html += "<th>Total</th></tr></thead><tbody>";
+  for (let prova = 1; prova <= 3; prova++) {
+    const tipo = provas['prova' + prova]?.tipo;
+    if (!tipo) continue;
 
-      sorted.forEach(t => {
-        html += `<tr><td>${t.name}</td><td>${t.box}</td>`;
-        for (let i = 1; i <= 3; i++) {
-          let result = t['prova'+i]?.resultado ?? '-';
-          if (result !== '-' && provasTipos['prova'+i]) {
-            const tipo = provasTipos['prova'+i];
-            if (tipo === "AMRAP") result += " reps";
-            if (tipo === "CARGA") result += " kg";
-            // For Time a gente não coloca nada
-          }
-          html += `<td>${result}</td><td>${t['prova'+i]?.rank ?? '-'}</td><td>${t['prova'+i]?.pontos ?? '-'}</td>`;
+    const filtered = teams.filter(t => t['prova' + prova]?.resultado != null);
+
+    // Processar resultados conforme o tipo da prova
+    filtered.forEach(team => {
+      let resultado = team['prova' + prova].resultado;
+
+      if (tipo === "FOR TIME") {
+        // Converter "mm:ss" para segundos
+        const parts = resultado.split(":");
+        if (parts.length === 2) {
+          const minutos = parseInt(parts[0], 10);
+          const segundos = parseInt(parts[1], 10);
+          resultado = minutos * 60 + segundos;
+        } else {
+          resultado = parseInt(resultado, 10);
         }
-        html += `<td>${t.total ?? '-'}</td></tr>`;
-      });
-
-      html += "</tbody></table>";
-      leaderboard.innerHTML = html;
+        team['prova' + prova].resultadoConvertido = resultado;
+      } else {
+        // Para AMRAP e CARGA, usar o resultado como número
+        team['prova' + prova].resultadoConvertido = parseFloat(resultado);
+      }
     });
+
+    // Ordenar os times conforme o tipo da prova
+    if (tipo === "FOR TIME") {
+      filtered.sort((a, b) => a['prova' + prova].resultadoConvertido - b['prova' + prova].resultadoConvertido);
+    } else {
+      filtered.sort((a, b) => b['prova' + prova].resultadoConvertido - a['prova' + prova].resultadoConvertido);
+    }
+
+    // Atribuir rank e pontos
+    filtered.forEach((team, index) => {
+      team['prova' + prova].rank = index + 1;
+      team['prova' + prova].pontos = pontosPorPosicao(index + 1);
+    });
+  }
+
+  // Calcular o total de pontos
+  teams.forEach(t => {
+    t.total = [1, 2, 3].reduce((acc, i) => acc + (t['prova' + i]?.pontos ?? 0), 0);
+  });
+
+  // Ordenar os times pelo total de pontos
+  teams.sort((a, b) => b.total - a.total);
+  return teams;
+}
+
   });
 }
 
