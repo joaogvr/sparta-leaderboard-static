@@ -124,7 +124,12 @@ function renderLeaderboard(category) {
             const tipo = tipos['prova'+i];
             if (r !== '-' && tipo) {
               if (tipo === "AMRAP") r += " reps";
-              if (tipo === "CARGA") r += " kg";
+              else if (tipo === "CARGA") r += " kg";
+              else if (tipo === "FOR TIME" && typeof r === "number") {
+                const min = Math.floor(r / 60);
+                const sec = String(r % 60).padStart(2, '0');
+                r = `${min}:${sec}`;
+              }
             }
             html += `<td>${r}</td><td>${t['prova'+i]?.rank ?? '-'}</td><td>${t['prova'+i]?.pontos ?? '-'}</td>`;
           }
@@ -223,7 +228,11 @@ function renderAdmin() {
       const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
       if (val) {
         const tipo = tipos['prova'+i];
-        updates[`prova${i}/resultado`] = tipo === "FOR TIME" ? val : parseFloat(val);
+        if (tipo === "FOR TIME") {
+          updates[`prova${i}/resultado`] = val; // salva como string mm:ss
+        } else {
+          updates[`prova${i}/resultado`] = parseFloat(val);
+        }   
       }
     }
 
