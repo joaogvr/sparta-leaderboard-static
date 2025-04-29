@@ -34,6 +34,7 @@ function setupTabs() {
 // RENDERIZAR LEADERBOARD
 function renderLeaderboard(category) {
   const leaderboard = document.getElementById("leaderboard");
+
   db.ref("categories/" + category + "/teams").once("value").then(snapshot => {
     const teams = [];
     snapshot.forEach(teamSnap => {
@@ -41,24 +42,42 @@ function renderLeaderboard(category) {
       team.name = teamSnap.key;
       teams.push(team);
     });
-    calculateRanking(teams).then(sorted => {
+
+    calculateRanking(teams).then(async sorted => {
+      // Primeiro pegamos os tipos de prova
+      const provasSnapshot = await db.ref("provas").once("value");
+      const provasTipos = {};
+      provasSnapshot.forEach(child => {
+        provasTipos[child.key] = child.val().tipo;
+      });
+
       let html = "<table><thead><tr><th>Dupla</th><th>Box</th>";
       for (let i = 1; i <= 3; i++) {
         html += `<th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>`;
       }
       html += "<th>Total</th></tr></thead><tbody>";
+
       sorted.forEach(t => {
         html += `<tr><td>${t.name}</td><td>${t.box}</td>`;
         for (let i = 1; i <= 3; i++) {
-          html += `<td>${t['prova'+i]?.resultado ?? '-'}</td><td>${t['prova'+i]?.rank ?? '-'}</td><td>${t['prova'+i]?.pontos ?? '-'}</td>`;
+          let result = t['prova'+i]?.resultado ?? '-';
+          if (result !== '-' && provasTipos['prova'+i]) {
+            const tipo = provasTipos['prova'+i];
+            if (tipo === "AMRAP") result += " reps";
+            if (tipo === "CARGA") result += " kg";
+            // For Time a gente não coloca nada
+          }
+          html += `<td>${result}</td><td>${t['prova'+i]?.rank ?? '-'}</td><td>${t['prova'+i]?.pontos ?? '-'}</td>`;
         }
         html += `<td>${t.total ?? '-'}</td></tr>`;
       });
+
       html += "</tbody></table>";
       leaderboard.innerHTML = html;
     });
   });
 }
+
 
 // CALCULAR RANKINGS, PONTOS E TOTAL
 async function calculateRanking(teams) {
@@ -69,9 +88,29 @@ async function calculateRanking(teams) {
   for (let prova = 1; prova <= 3; prova++) {
     const tipo = provas['prova'+prova]?.tipo;
     if (!tipo) continue;
+
     const filtered = teams.filter(t => t['prova'+prova]?.resultado != null);
-    if (tipo === "FOR TIME") filtered.sort((a, b) => a['prova'+prova].resultado - b['prova'+prova].resultado);
-    else filtered.sort((a, b) => b['prova'+prova].resultado - a['prova'+prova].resultado);
+
+    filtered.forEach(t => {
+      if (tipo === "FOR TIME" && typeof t['prova'+prova].resultado === "string") {
+        const parts = t['prova'+prova].resultado.split(':');
+        if (parts.length === 2) {
+          const minutes = parseInt(parts[0], 10);
+          const seconds = parseInt(parts[1], 10);
+          t['prova'+prova].resultado_convertido = (minutes * 60) + seconds;
+        } else {
+          t['prova'+prova].resultado_convertido = parseFloat(t['prova'+prova].resultado);
+        }
+      } else {
+        t['prova'+prova].resultado_convertido = parseFloat(t['prova'+prova].resultado);
+      }
+    });
+
+    if (tipo === "FOR TIME") {
+      filtered.sort((a, b) => a['prova'+prova].resultado_convertido - b['prova'+prova].resultado_convertido);
+    } else {
+      filtered.sort((a, b) => b['prova'+prova].resultado_convertido - a['prova'+prova].resultado_convertido);
+    }
 
     filtered.forEach((team, index) => {
       team['prova'+prova].rank = index + 1;
@@ -86,6 +125,7 @@ async function calculateRanking(teams) {
   teams.sort((a, b) => b.total - a.total);
   return teams;
 }
+
 
 // PONTUAÇÃO ESTILO GAMES
 function pontosPorPosicao(pos) {
