@@ -181,26 +181,39 @@ function renderAdmin() {
     });
   }
 
-window.saveResults = function(category, team) {
+window.saveResults = async function(category, team) {
   const updates = {};
+  const provasSnapshot = await db.ref("provas").once("value");
+  const provasTipos = {};
+  provasSnapshot.forEach(child => {
+    provasTipos[child.key] = child.val().tipo;
+  });
+
   for (let i = 1; i <= 3; i++) {
-    const val = document.getElementById(`res-${category}-${team}-p${i}`).value;
-    if (val) updates[`prova${i}/resultado`] = parseFloat(val);
+    const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
+    if (val) {
+      const tipo = provasTipos['prova' + i];
+      if (tipo === "FOR TIME") {
+        // Salva como texto puro para tempos tipo 02:33
+        updates[`prova${i}/resultado`] = val;
+      } else {
+        // Salva como número para reps/carga
+        updates[`prova${i}/resultado`] = parseFloat(val);
+      }
+    }
   }
+
   db.ref(`categories/${category}/teams/${team}`).update(updates).then(() => {
     alert("Resultados atualizados!");
     loadTeams();
     setupTabs();
-
     const activeTab = document.querySelector('.tab.active')?.innerText;
     if (activeTab) {
-      // Forçar recálculo
-      setTimeout(() => {
-        renderLeaderboard(activeTab);
-      }, 300);
+      renderLeaderboard(activeTab);
     }
   });
 };
+
 
 
   window.deleteTeam = function(category, team) {
