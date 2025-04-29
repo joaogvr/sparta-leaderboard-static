@@ -220,6 +220,7 @@ function renderAdmin() {
       alert("Resultados atualizados!");
       loadTeams();
       setupTabs();
+      renderLeaderboard(category);
       const activeTab = document.querySelector('.tab.active')?.innerText;
       if (activeTab) {
         renderLeaderboard(activeTab);
