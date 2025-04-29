@@ -1,11 +1,11 @@
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCDaOdD62oFnLCY06L29w17sF5MhCV_fvA",
+  authDomain: "leaderboard-sparta.firebaseapp.com",
+  databaseURL: "https://leaderboard-sparta-default-rtdb.firebaseio.com",
+  projectId: "leaderboard-sparta",
+  storageBucket: "leaderboard-sparta.appspot.com",
+  messagingSenderId: "891532185807",
+  appId: "1:891532185807:web:369aac75938e202fe4a7ba"
 };
 
 let db;
@@ -14,6 +14,7 @@ function initFirebase() {
   const app = firebase.initializeApp(firebaseConfig);
   db = firebase.database();
 }
+
 
 function setupTabs() {
   db.ref("categories").once("value").then(snapshot => {
