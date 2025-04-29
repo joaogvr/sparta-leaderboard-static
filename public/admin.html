@@ -1,1 +1,48 @@
-<!-- Página de administração de resultados -->
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Administração - Sparta</title>
+  <style>
+    body { background: #000; color: #fff; font-family: sans-serif; padding: 2rem; }
+    .card { background: #111; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
+    input, select, button { margin: 0.5rem 0; padding: 0.5rem; }
+    button { background: red; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Painel de Administração</h1>
+  <form id="addForm">
+    <input id="teamName" placeholder="Nome da Dupla" />
+    <input id="boxName" placeholder="Box" />
+    <select id="category">
+      <option>RX Masculino</option>
+      <option>Intermediário Feminino</option>
+      <option>Scale Feminino</option>
+      <option>Scale Masculino</option>
+    </select>
+    <button type="submit">Adicionar Dupla</button>
+  </form>
+
+  <form id="provaForm">
+    <input id="provaInput" placeholder="Nome da Prova" />
+    <select id="tipoProvaInput">
+      <option value="AMRAP">AMRAP</option>
+      <option value="CARGA">CARGA</option>
+      <option value="FOR TIME">FOR TIME</option>
+    </select>
+    <button type="submit">Cadastrar Prova</button>
+  </form>
+
+  <div id="teamsList"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="script.js"></script>
+  <script>
+    initFirebase();
+    renderAdmin();
+  </script>
+</body>
+</html>
