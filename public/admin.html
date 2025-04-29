@@ -7,84 +7,81 @@
     body {
       background: #000;
       color: #fff;
-      font-family: sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
     }
-
     h1 {
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
+      text-align: center;
     }
-
-    .back-button {
-      display: inline-block;
-      margin-bottom: 1.5rem;
-      background: #444;
-      color: #fff;
-      padding: 0.5rem 1rem;
-      text-decoration: none;
-      border-radius: 6px;
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      align-items: center;
+      justify-content: center;
     }
-
-    .card {
-      background: #111;
-      border: 1px solid #222;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .card h3 {
-      margin-top: 0;
-      font-size: 1.1rem;
-    }
-
     input, select, button {
-      margin: 0.3rem 0.2rem;
-      padding: 0.4rem;
+      padding: 0.5rem;
       border: none;
-      border-radius: 5px;
-      font-size: 0.9rem;
+      border-radius: 4px;
+      font-size: 1rem;
     }
-
-    input[type="text"] {
-      width: 90px;
+    input, select {
+      flex: 1;
+      min-width: 140px;
     }
-
     button {
       background: red;
       color: white;
       cursor: pointer;
+    }
+    .category-block {
+      margin-bottom: 2rem;
+    }
+    .category-label {
+      font-size: 1.4rem;
       font-weight: bold;
+      margin: 2rem 0 1rem;
+      padding: 0.5rem 0;
+      border-bottom: 2px solid #444;
+      text-transform: uppercase;
     }
-
-    button:hover {
-      background: #c00;
+    .category-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
     }
-
-    .category-section {
-      margin-top: 2rem;
-      border-top: 1px solid #333;
-      padding-top: 1rem;
+    .card {
+      background: #111;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.05);
     }
-
-    .category-title {
-      color: #f33;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
+    .card h3 {
+      margin: 0;
     }
-
-    #addForm, #provaForm {
-      margin-bottom: 1.5rem;
+    .card p {
+      margin: 0.3rem 0 0.7rem;
     }
-
-    select {
-      background: #222;
-      color: #fff;
+    .card input {
+      width: 60px;
+      margin-right: 0.3rem;
+    }
+    .card button {
+      margin-top: 0.5rem;
+      display: inline-block;
+    }
+    .card button:last-child {
+      background: darkred;
+      margin-left: 0.5rem;
     }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">← Voltar para Leaderboard</a>
   <h1>Painel de Administração</h1>
 
   <form id="addForm">
