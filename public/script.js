@@ -87,8 +87,15 @@ function renderLeaderboard(category) {
 // CALCULAR RANKINGS, PONTOS E TOTAL
 async function calculateRanking(teams) {
   const provas = {};
-  const snapshot = await db.ref("provas").once("value");
-  snapshot.forEach(p => provas[p.key] = p.val());
+  const snapshot = await Promise.all([
+    db.ref("provas/prova1").once("value"),
+    db.ref("provas/prova2").once("value"),
+    db.ref("provas/prova3").once("value")
+  ]);
+  
+  provas['prova1'] = snapshot[0].val();
+  provas['prova2'] = snapshot[1].val();
+  provas['prova3'] = snapshot[2].val();
 
   for (let prova = 1; prova <= 3; prova++) {
     const tipo = provas['prova' + prova]?.tipo;
