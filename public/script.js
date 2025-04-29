@@ -143,13 +143,18 @@ window.saveResults = function(category, team) {
   db.ref(`categories/${category}/teams/${team}`).update(updates).then(() => {
     alert("Resultados atualizados!");
     loadTeams();
-    setupTabs(); // Atualiza as abas de categorias
+    setupTabs();
+
     const activeTab = document.querySelector('.tab.active')?.innerText;
     if (activeTab) {
-      renderLeaderboard(activeTab); // Atualiza a tabela do Leaderboard com a categoria ativa
+      // Forçar recálculo
+      setTimeout(() => {
+        renderLeaderboard(activeTab);
+      }, 300);
     }
   });
 };
+
 
   window.deleteTeam = function(category, team) {
     if (confirm(`Deseja remover a dupla "${team}" da categoria "${category}"?`)) {
