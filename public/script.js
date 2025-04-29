@@ -44,7 +44,7 @@ function renderLeaderboard(category) {
     calculateRanking(teams).then(sorted => {
       let html = "<table><thead><tr><th>Dupla</th><th>Box</th>";
       for (let i = 1; i <= 3; i++) {
-        html += `<th>P${i} Resultado</th><th>Rank</th><th>Pontos</th>`;
+        html += `<th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>`;
       }
       html += "<th>Total</th></tr></thead><tbody>";
       sorted.forEach(t => {
