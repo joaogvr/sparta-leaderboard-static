@@ -16,7 +16,7 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// TABS - para mudar entre categorias
+// TABS
 function setupTabs() {
   db.ref("categories").once("value").then(snapshot => {
     const tabs = document.getElementById("tabs");
@@ -26,9 +26,7 @@ function setupTabs() {
       btn.className = "tab";
       btn.innerText = child.key;
       btn.onclick = () => {
-        // Remove active de todos
         document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-        // Adiciona active na clicada
         btn.classList.add("active");
         renderLeaderboard(child.key);
       };
@@ -36,7 +34,6 @@ function setupTabs() {
     });
   });
 }
-
 
 // RENDERIZAR LEADERBOARD
 function renderLeaderboard(category) {
@@ -50,7 +47,42 @@ function renderLeaderboard(category) {
       teams.push(team);
     });
 
-    async function calculateRanking(teams) {
+    calculateRanking(teams).then(sorted => {
+      db.ref("provas").once("value").then(snapshot => {
+        const provasTipos = {};
+        snapshot.forEach(child => {
+          provasTipos[child.key] = child.val().tipo;
+        });
+
+        let html = "<table><thead><tr><th>Dupla</th><th>Box</th>";
+        for (let i = 1; i <= 3; i++) {
+          html += `<th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>`;
+        }
+        html += "<th>Total</th></tr></thead><tbody>";
+
+        sorted.forEach(t => {
+          html += `<tr><td>${t.name}</td><td>${t.box}</td>`;
+          for (let i = 1; i <= 3; i++) {
+            let result = t['prova' + i]?.resultado ?? '-';
+            if (result !== '-' && provasTipos['prova' + i]) {
+              const tipo = provasTipos['prova' + i];
+              if (tipo === "AMRAP") result += " reps";
+              if (tipo === "CARGA") result += " kg";
+            }
+            html += `<td>${result}</td><td>${t['prova' + i]?.rank ?? '-'}</td><td>${t['prova' + i]?.pontos ?? '-'}</td>`;
+          }
+          html += `<td>${t.total ?? '-'}</td></tr>`;
+        });
+
+        html += "</tbody></table>";
+        leaderboard.innerHTML = html;
+      });
+    });
+  });
+}
+
+// CALCULAR RANKINGS, PONTOS E TOTAL
+async function calculateRanking(teams) {
   const provas = {};
   const snapshot = await db.ref("provas").once("value");
   snapshot.forEach(p => provas[p.key] = p.val());
@@ -61,12 +93,10 @@ function renderLeaderboard(category) {
 
     const filtered = teams.filter(t => t['prova' + prova]?.resultado != null);
 
-    // Processar resultados conforme o tipo da prova
     filtered.forEach(team => {
       let resultado = team['prova' + prova].resultado;
 
-      if (tipo === "FOR TIME") {
-        // Converter "mm:ss" para segundos
+      if (tipo === "FOR TIME" && typeof resultado === "string") {
         const parts = resultado.split(":");
         if (parts.length === 2) {
           const minutos = parseInt(parts[0], 10);
@@ -75,88 +105,32 @@ function renderLeaderboard(category) {
         } else {
           resultado = parseInt(resultado, 10);
         }
-        team['prova' + prova].resultadoConvertido = resultado;
       } else {
-        // Para AMRAP e CARGA, usar o resultado como número
-        team['prova' + prova].resultadoConvertido = parseFloat(resultado);
+        resultado = parseFloat(resultado);
       }
+
+      team['prova' + prova].resultadoConvertido = resultado;
     });
 
-    // Ordenar os times conforme o tipo da prova
     if (tipo === "FOR TIME") {
       filtered.sort((a, b) => a['prova' + prova].resultadoConvertido - b['prova' + prova].resultadoConvertido);
     } else {
       filtered.sort((a, b) => b['prova' + prova].resultadoConvertido - a['prova' + prova].resultadoConvertido);
     }
 
-    // Atribuir rank e pontos
     filtered.forEach((team, index) => {
       team['prova' + prova].rank = index + 1;
       team['prova' + prova].pontos = pontosPorPosicao(index + 1);
     });
   }
 
-  // Calcular o total de pontos
   teams.forEach(t => {
     t.total = [1, 2, 3].reduce((acc, i) => acc + (t['prova' + i]?.pontos ?? 0), 0);
   });
 
-  // Ordenar os times pelo total de pontos
   teams.sort((a, b) => b.total - a.total);
   return teams;
 }
-
-  });
-}
-
-
-// CALCULAR RANKINGS, PONTOS E TOTAL
-async function calculateRanking(teams) {
-  const provas = {};
-  const snapshot = await db.ref("provas").once("value");
-  snapshot.forEach(p => provas[p.key] = p.val());
-
-  for (let prova = 1; prova <= 3; prova++) {
-    const tipo = provas['prova'+prova]?.tipo;
-    if (!tipo) continue;
-
-    const filtered = teams.filter(t => t['prova'+prova]?.resultado != null);
-
-    filtered.forEach(t => {
-      if (tipo === "FOR TIME" && typeof t['prova'+prova].resultado === "string") {
-        const parts = t['prova'+prova].resultado.split(':');
-        if (parts.length === 2) {
-          const minutes = parseInt(parts[0], 10);
-          const seconds = parseInt(parts[1], 10);
-          t['prova'+prova].resultado_convertido = (minutes * 60) + seconds;
-        } else {
-          t['prova'+prova].resultado_convertido = parseFloat(t['prova'+prova].resultado);
-        }
-      } else {
-        t['prova'+prova].resultado_convertido = parseFloat(t['prova'+prova].resultado);
-      }
-    });
-
-    if (tipo === "FOR TIME") {
-      filtered.sort((a, b) => a['prova'+prova].resultado_convertido - b['prova'+prova].resultado_convertido);
-    } else {
-      filtered.sort((a, b) => b['prova'+prova].resultado_convertido - a['prova'+prova].resultado_convertido);
-    }
-
-    filtered.forEach((team, index) => {
-      team['prova'+prova].rank = index + 1;
-      team['prova'+prova].pontos = pontosPorPosicao(index + 1);
-    });
-  }
-
-  teams.forEach(t => {
-    t.total = [1,2,3].reduce((acc, i) => acc + (t['prova'+i]?.pontos ?? 0), 0);
-  });
-
-  teams.sort((a, b) => b.total - a.total);
-  return teams;
-}
-
 
 // PONTUAÇÃO ESTILO GAMES
 function pontosPorPosicao(pos) {
@@ -205,40 +179,36 @@ function renderAdmin() {
     });
   }
 
-window.saveResults = async function(category, team) {
-  const updates = {};
-  const provasSnapshot = await db.ref("provas").once("value");
-  const provasTipos = {};
-  provasSnapshot.forEach(child => {
-    provasTipos[child.key] = child.val().tipo;
-  });
+  window.saveResults = async function(category, team) {
+    const updates = {};
+    const provasSnapshot = await db.ref("provas").once("value");
+    const provasTipos = {};
+    provasSnapshot.forEach(child => {
+      provasTipos[child.key] = child.val().tipo;
+    });
 
-  for (let i = 1; i <= 3; i++) {
-    const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
-    if (val) {
-      const tipo = provasTipos['prova' + i];
-      if (tipo === "FOR TIME") {
-        // Salva como texto puro para tempos tipo 02:33
-        updates[`prova${i}/resultado`] = val;
-      } else {
-        // Salva como número para reps/carga
-        updates[`prova${i}/resultado`] = parseFloat(val);
+    for (let i = 1; i <= 3; i++) {
+      const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
+      if (val) {
+        const tipo = provasTipos['prova' + i];
+        if (tipo === "FOR TIME") {
+          updates[`prova${i}/resultado`] = val;
+        } else {
+          updates[`prova${i}/resultado`] = parseFloat(val);
+        }
       }
     }
-  }
 
-  db.ref(`categories/${category}/teams/${team}`).update(updates).then(() => {
-    alert("Resultados atualizados!");
-    loadTeams();
-    setupTabs();
-    const activeTab = document.querySelector('.tab.active')?.innerText;
-    if (activeTab) {
-      renderLeaderboard(activeTab);
-    }
-  });
-};
-
-
+    db.ref(`categories/${category}/teams/${team}`).update(updates).then(() => {
+      alert("Resultados atualizados!");
+      loadTeams();
+      setupTabs();
+      const activeTab = document.querySelector('.tab.active')?.innerText;
+      if (activeTab) {
+        renderLeaderboard(activeTab);
+      }
+    });
+  };
 
   window.deleteTeam = function(category, team) {
     if (confirm(`Deseja remover a dupla "${team}" da categoria "${category}"?`)) {
