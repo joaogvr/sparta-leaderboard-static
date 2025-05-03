@@ -17,7 +17,123 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// Função para converter mm:ss para segundos
+// Configurar os tabs de categorias
+function setupTabs() {
+  const tabsDiv = document.getElementById("tabs");
+  db.ref("categories").once("value").then(snapshot => {
+    tabsDiv.innerHTML = ""; // Limpa tabs existentes
+    snapshot.forEach(category => {
+      const categoryName = category.key;
+      const tab = document.createElement("div");
+      tab.className = "tab";
+      tab.textContent = categoryName;
+      tab.onclick = () => renderLeaderboard(categoryName);
+      tabsDiv.appendChild(tab);
+    });
+
+    // Ativar o primeiro tab por padrão
+    if (tabsDiv.firstChild) {
+      tabsDiv.firstChild.classList.add("active");
+      renderLeaderboard(snapshot.val() ? Object.keys(snapshot.val())[0] : null);
+    }
+  });
+}
+
+// Renderizar o leaderboard para uma categoria
+function renderLeaderboard(category) {
+  if (!category) return;
+
+  const leaderboardDiv = document.getElementById("leaderboard");
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = snapshot.val();
+    if (!teams) {
+      leaderboardDiv.innerHTML = "<p>Nenhum dado encontrado.</p>";
+      return;
+    }
+
+    let table = `<table>
+      <thead>
+        <tr>
+          <th>Equipe</th>
+          <th>Prova 1</th>
+          <th>Prova 2</th>
+          <th>Prova 3</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    
+    Object.entries(teams).forEach(([teamName, teamData]) => {
+      table += `<tr>
+        <td>${teamName}</td>
+        <td>${formatProva(teamData.prova1)}</td>
+        <td>${formatProva(teamData.prova2)}</td>
+        <td>${formatProva(teamData.prova3)}</td>
+        <td>${teamData.total || '-'}</td>
+      </tr>`;
+    });
+
+    table += `</tbody></table>`;
+    leaderboardDiv.innerHTML = table;
+
+    // Marcar o tab como ativo
+    document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+    Array.from(document.querySelectorAll(".tab")).find(tab => tab.textContent === category).classList.add("active");
+  }).catch(err => {
+    console.error("Erro ao buscar dados:", err);
+    leaderboardDiv.innerHTML = "<p>Erro ao carregar leaderboard.</p>";
+  });
+}
+
+// Formatar uma prova para exibição
+function formatProva(prova) {
+  if (!prova) return "-";
+  return `Rank: ${prova.rank || '-'}, Pontos: ${prova.pontos || '-'}`;
+}
+
+// Função para calcular os ranks e pontos
+function calculateRanking(category) {
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = [];
+    snapshot.forEach(teamSnap => {
+      const team = teamSnap.val();
+      team.name = teamSnap.key;
+      teams.push(team);
+    });
+
+    const provas = [1, 2, 3];
+    provas.forEach(prova => {
+      const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
+
+      // Converter resultados para segundos ou manter como número
+      teamsWithResults.forEach(team => {
+        const resultado = team[`prova${prova}`]?.resultado;
+        team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
+          ? convertToSeconds(resultado) // Converte mm:ss para segundos
+          : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
+      });
+
+      // Ordenar por resultado (menor é melhor para tempo)
+      teamsWithResults.sort((a, b) =>
+        a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
+      );
+
+      // Atribuir rank e pontos
+      teamsWithResults.forEach((team, index) => {
+        const rank = index + 1;
+        const pontos = pontosPorPosicao(rank);
+
+        // Atualizar no Firebase
+        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+          rank,
+          pontos
+        });
+      });
+    });
+  }).catch(err => console.error("Erro ao calcular ranking:", err));
+}
+
+// Converter mm:ss para segundos
 function convertToSeconds(time) {
   const parts = time.split(":");
   if (parts.length === 2) {
@@ -25,51 +141,10 @@ function convertToSeconds(time) {
     const seconds = parseInt(parts[1], 10);
     return minutes * 60 + seconds;
   }
-  return parseFloat(time); // Caso não seja mm:ss, retorna como número
+  return parseFloat(time);
 }
 
-// Função para calcular o ranking e os pontos
-async function calculateRanking(category) {
-  const teamsSnapshot = await db.ref(`categories/${category}/teams`).once("value");
-  const teams = [];
-  teamsSnapshot.forEach(teamSnap => {
-    const team = teamSnap.val();
-    team.name = teamSnap.key;
-    teams.push(team);
-  });
-
-  const provas = [1, 2, 3]; // Provas para processar
-  provas.forEach(prova => {
-    const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
-
-    // Converter resultados para segundos ou manter como número
-    teamsWithResults.forEach(team => {
-      const resultado = team[`prova${prova}`].resultado;
-      team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
-        ? convertToSeconds(resultado) // Converte mm:ss para segundos
-        : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
-    });
-
-    // Ordenar por resultado (menor é melhor para tempo)
-    teamsWithResults.sort((a, b) =>
-      a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
-    );
-
-    // Atribuir rank e pontos
-    teamsWithResults.forEach((team, index) => {
-      const rank = index + 1;
-      const pontos = pontosPorPosicao(rank);
-
-      // Atualizar no Firebase
-      db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
-        rank,
-        pontos
-      });
-    });
-  });
-}
-
-// Função para calcular os pontos com base na posição
+// Retornar pontos com base no rank
 function pontosPorPosicao(pos) {
   if (pos === 1) return 100;
   if (pos === 2) return 90;
@@ -83,72 +158,8 @@ function pontosPorPosicao(pos) {
   return 50;
 }
 
-// Função para salvar resultados de uma equipe
-async function saveResults(category, teamName) {
-  const updates = {};
-  for (let i = 1; i <= 3; i++) {
-    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
-    if (!input) continue;
-
-    const val = input.value.trim();
-    if (val !== "") {
-      updates[`prova${i}/resultado`] = val;
-    }
-  }
-
-  // Atualizar resultados no Firebase
-  await db.ref(`categories/${category}/teams/${teamName}`).update(updates);
-
-  // Recalcular rankings e pontos
-  await calculateRanking(category);
-
-  alert("Resultado salvo com sucesso!");
-}
-
-// Função para carregar a interface de administração
-function renderAdmin() {
-  const teamsList = document.getElementById("teamsList");
-
-  function loadTeams() {
-    db.ref("categories").once("value").then(snapshot => {
-      teamsList.innerHTML = "";
-      snapshot.forEach(cat => {
-        const category = cat.key;
-        cat.child("teams").forEach(teamSnap => {
-          const team = teamSnap.key;
-          const data = teamSnap.val();
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <h3>${team}</h3><p>${data.box} (${category})</p>
-            ${[1, 2, 3].map(i =>
-              `<input type="text" id="res-${category}-${team}-p${i}" 
-                value="${data['prova' + i]?.resultado ?? ''}" 
-                placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
-            ).join('')}
-            <div class="btns">
-              <button onclick="saveResults('${category}', '${team}')">Salvar</button>
-              <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
-            </div>
-          `;
-          teamsList.appendChild(div);
-        });
-      });
-    });
-  }
-
-  // Função para deletar uma equipe
-  window.deleteTeam = function (category, team) {
-    if (confirm(`Remover ${team}?`)) {
-      db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
-    }
-  };
-
-  loadTeams();
-}
-
-// Inicializar ao carregar a página
+// Chamar a função de inicialização ao carregar a página
 window.onload = function () {
   initFirebase();
-  renderAdmin();
+  setupTabs();
 };
