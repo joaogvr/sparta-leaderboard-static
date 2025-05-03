@@ -50,7 +50,10 @@ function addTeam(event) {
       boxNameInput.value = ""; // Limpa o campo de entrada
       renderAdmin(); // Atualiza a lista de equipes
     })
-    .catch(err => console.error("Erro ao adicionar nova dupla:", err));
+    .catch(err => {
+      console.error("Erro ao adicionar nova dupla:", err);
+      alert("Ocorreu um erro ao adicionar a nova dupla. Verifique o console para mais detalhes.");
+    });
 }
 
 // Renderizar interface de administração
@@ -176,4 +179,10 @@ function calculateRanking(category) {
 window.onload = function () {
   initFirebase();
   renderAdmin();
+
+  // Event listener para o formulário de criação de duplas
+  const addTeamForm = document.getElementById("addTeamForm");
+  if (addTeamForm) {
+    addTeamForm.addEventListener("submit", addTeam);
+  }
 };
