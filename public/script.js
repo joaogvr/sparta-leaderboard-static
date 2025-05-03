@@ -34,7 +34,9 @@ function renderAdmin() {
           div.innerHTML = `
             <h3>${team}</h3><p>${data.box} (${category})</p>
             ${[1, 2, 3].map(i =>
-              `<input type="text" id="res-${category}-${team}-p${i}" value="${data['prova' + i]?.resultado ?? ''}" placeholder="Resultado P${i} (Ex: 02:54 ou 100kg ou reps)">`
+              `<input type="text" id="res-${category}-${team}-p${i}"
+                value="${data['prova' + i]?.resultado ?? ''}" 
+                placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
             ).join('')}
             <div class="btns">
               <button onclick="saveResults('${category}', '${team}')">Salvar</button>
@@ -152,7 +154,16 @@ async function calculateRanking(teams) {
 
     filtrados.forEach(t => {
       const res = t['prova' + prova].resultado;
-      t['prova' + prova].resultado_convertido = tipo === "FOR TIME" ? res : parseFloat(res);
+      let convertido;
+
+      if (tipo === "FOR TIME" && typeof res === "string" && res.includes(":")) {
+        const [min, sec] = res.split(":").map(Number);
+        convertido = min * 60 + sec;
+      } else {
+        convertido = parseFloat(res);
+      }
+
+      t['prova' + prova].resultado_convertido = convertido;
     });
 
     filtrados.sort((a, b) =>
