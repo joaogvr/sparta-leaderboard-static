@@ -1,0 +1,56 @@
+body {
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: auto;
+}
+h1 {
+  text-align: center;
+}
+.insercao-form {
+  background: #111;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+input, select, button {
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+button {
+  background: red;
+  color: white;
+  cursor: pointer;
+}
+.category-label {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+.category-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.card {
+  background: #111;
+  padding: 1rem;
+  border-radius: 8px;
+  width: 250px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.05);
+}
+.card h3 {
+  margin: 0;
+}
+.card input {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
