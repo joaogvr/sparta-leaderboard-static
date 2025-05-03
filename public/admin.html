@@ -122,7 +122,6 @@
     </form>
   </div>
 
-  <!-- Aqui aparecerão os blocos separados por categoria -->
   <div id="teamsList"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -132,7 +131,7 @@
     script.src = "script.js";
     script.onload = function () {
       initFirebase();
-      renderAdmin();
+      renderAdmin(true); // chamando com a flag de layout novo
     };
     document.body.appendChild(script);
   </script>
