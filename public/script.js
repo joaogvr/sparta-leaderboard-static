@@ -184,11 +184,17 @@ window.saveResults = async function(category, team) {
     if (!input) continue;
 
     const val = input.value.trim();
-    if (val !== "") {
-      const tipo = tipos['prova' + i];
+    const tipo = tipos[`prova${i}`];
 
+    if (val !== "") {
       if (tipo === "FOR TIME") {
-        updates[`prova${i}/resultado`] = val; // salva como string ex: "05:22"
+        // Valida se está no formato correto mm:ss
+        const regex = /^\d{1,2}:\d{2}$/;
+        if (!regex.test(val)) {
+          alert(`Formato inválido para FOR TIME na Prova ${i}. Use mm:ss.`);
+          return;
+        }
+        updates[`prova${i}/resultado`] = val;  // salva como string
       } else {
         const parsed = parseFloat(val.replace(",", "."));
         if (!isNaN(parsed)) {
@@ -213,8 +219,6 @@ window.saveResults = async function(category, team) {
   alert("Resultado salvo com sucesso!");
   renderAdmin(true);
 };
-
-
 
   window.deleteTeam = function(category, team) {
     if (confirm(`Remover ${team}?`)) {
