@@ -113,12 +113,12 @@ function renderLeaderboard(category) {
 
         let html = "<table><thead><tr><th>Dupla</th><th>Box</th>";
         for (let i = 1; i <= 3; i++) {
-          html += <th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>;
+          html += `<th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>`;
         }
         html += "<th>Total</th></tr></thead><tbody>";
 
         sorted.forEach(t => {
-          html += <tr><td>${t.name}</td><td>${t.box}</td>;
+          html += `<tr><td>${t.name}</td><td>${t.box}</td>`;
           for (let i = 1; i <= 3; i++) {
             let r = t['prova'+i]?.resultado ?? '-';
             const tipo = tipos['prova'+i];
@@ -209,14 +209,14 @@ function renderAdmin() {
           const data = ts.val();
           const div = document.createElement("div");
           div.className = "card";
-          div.innerHTML = 
+          div.innerHTML = `
             <h3>${team}</h3><p>${data.box} (${category})</p>
             ${[1,2,3].map(i =>
               <input type="text" id="res-${category}-${team}-p${i}" value="${data['prova'+i]?.resultado ?? ''}" placeholder="Resultado P${i}">
             ).join('')}
             <button onclick="saveResults('${category}', '${team}')">Salvar</button>
             <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
-          ;
+          `;
           teamsList.appendChild(div);
         });
       });
