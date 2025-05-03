@@ -67,7 +67,7 @@ function renderAdmin() {
         if (tipo === "FOR TIME") {
           // Tratar entrada de tempo no formato MM:SS
           const timeParts = val.split(":").map(Number);
-          if (timeParts.length === 2) {
+          if (timeParts.length === 2 && !isNaN(timeParts[0]) && !isNaN(timeParts[1])) {
             const seconds = timeParts[0] * 60 + timeParts[1]; // Converter minutos e segundos para segundos totais
             updates[`prova${i}/resultado`] = seconds; // Salvar o tempo em segundos no Firebase
           } else {
