@@ -184,6 +184,19 @@ function renderAdmin() {
       teamsList.innerHTML = "";
       snapshot.forEach(cat => {
         const category = cat.key;
+
+        // Formulário para adicionar nova dupla (INSERIR AQUI)
+        const addTeamForm = `
+          <div class="add-team-form">
+            <h3>Adicionar Nova Dupla - ${category}</h3>
+            <input type="text" id="new-team-name-${category}" placeholder="Nome da Dupla">
+            <input type="text" id="new-team-box-${category}" placeholder="Box">
+            <button onclick="addTeam('${category}')">Adicionar</button>
+          </div>
+        `;
+        teamsList.innerHTML += addTeamForm;
+
+        // Listar equipes existentes
         cat.child("teams").forEach(teamSnap => {
           const team = teamSnap.key;
           const data = teamSnap.val();
@@ -207,7 +220,7 @@ function renderAdmin() {
     });
   }
 
-  // Função para deletar uma equipe
+  // Função para deletar uma equipe (já existente)
   window.deleteTeam = function (category, team) {
     if (confirm(`Remover ${team}?`)) {
       db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
@@ -216,7 +229,6 @@ function renderAdmin() {
 
   loadTeams();
 }
-
 // Inicializar ao carregar a página
 window.onload = function () {
   initFirebase();
