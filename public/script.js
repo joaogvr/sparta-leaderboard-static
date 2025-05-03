@@ -36,8 +36,10 @@ function renderAdmin() {
             ${[1, 2, 3].map(i =>
               `<input type="text" id="res-${category}-${team}-p${i}" value="${data['prova' + i]?.resultado ?? ''}" placeholder="Resultado P${i}">`
             ).join('')}
-            <button onclick="saveResults('${category}', '${team}')">Salvar</button>
-            <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
+            <div class="btns">
+              <button onclick="saveResults('${category}', '${team}')">Salvar</button>
+              <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
+            </div>
           `;
           teamsList.appendChild(div);
         });
