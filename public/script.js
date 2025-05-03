@@ -156,9 +156,8 @@ async function calculateRanking(teams) {
       const res = t['prova' + prova].resultado;
       let convertido;
 
-      if (tipo === "FOR TIME" && typeof res === "string" && res.includes(":")) {
-        const [min, sec] = res.split(":").map(Number);
-        convertido = min * 60 + sec;
+      if (tipo === "FOR TIME") {
+        convertido = res; // O tempo já foi convertido para segundos no saveResults
       } else {
         convertido = parseFloat(res);
       }
