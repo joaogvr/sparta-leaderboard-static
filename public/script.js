@@ -101,80 +101,6 @@ function renderLeaderboard(category) {
   });
 }
 
-// Função para calcular os ranks e pontos
-function calculateRanking(category) {
-  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
-    const teams = [];
-    snapshot.forEach(teamSnap => {
-      const team = teamSnap.val();
-      team.name = teamSnap.key;
-      teams.push(team);
-    });
-
-    const provas = [1, 2, 3];
-    provas.forEach(prova => {
-      db.ref(`provas/prova${prova}`).once("value").then(provaSnapshot => {
-        const provaType = provaSnapshot.val()?.tipo; // Tipo da prova
-        const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
-
-        // Converter resultados para segundos ou deixar como está
-        teamsWithResults.forEach(team => {
-          const resultado = team[`prova${prova}`]?.resultado;
-          team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
-            ? convertToSeconds(resultado) // Converte mm:ss para segundos
-            : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
-        });
-
-        // Ordenar os resultados com base no tipo da prova
-        if (provaType === "FOR TIME") {
-          // Menor é melhor
-          teamsWithResults.sort((a, b) =>
-            a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
-          );
-        } else if (provaType === "CARGA" || provaType === "AMRAP") {
-          // Maior é melhor
-          teamsWithResults.sort((a, b) =>
-            b[`prova${prova}`].resultado_convertido - a[`prova${prova}`].resultado_convertido
-          );
-        }
-
-        // Atribuir rank e pontos
-        teamsWithResults.forEach((team, index) => {
-          const rank = index + 1;
-          const pontos = pontosPorPosicao(rank);
-
-          // Atualizar no Firebase
-          db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
-            rank,
-            pontos
-          });
-        });
-      }).catch(err => console.error(`Erro ao buscar tipo da prova ${prova}:`, err));
-    });
-  }).catch(err => console.error("Erro ao calcular ranking:", err));
-}
-
-// Salvar resultados de uma equipe
-function saveResults(category, teamName) {
-  const updates = {};
-  for (let i = 1; i <= 3; i++) {
-    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
-    if (!input) continue;
-
-    const val = input.value.trim();
-    if (val !== "") {
-      updates[`prova${i}/resultado`] = val;
-    }
-  }
-
-  // Atualizar resultados no Firebase
-  db.ref(`categories/${category}/teams/${teamName}`).update(updates).then(() => {
-    // Recalcular rankings e pontos
-    calculateRanking(category);
-    alert("Resultado salvo com sucesso!");
-  }).catch(err => console.error("Erro ao salvar resultados:", err));
-}
-
 // Função para adicionar uma nova dupla
 function addTeam() {
   const teamNameInput = document.getElementById("team-name");
@@ -215,68 +141,25 @@ function addTeam() {
     });
 }
 
-// Função para cadastrar uma nova prova
-function addProva() {
-  const provaNameInput = document.getElementById("prova-name");
-  const provaTypeSelect = document.getElementById("prova-type");
+// Salvar resultados de uma equipe
+function saveResults(category, teamName) {
+  const updates = {};
+  for (let i = 1; i <= 3; i++) {
+    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
+    if (!input) continue;
 
-  // Verificar se os campos estão preenchidos
-  const provaName = provaNameInput.value.trim();
-  const provaType = provaTypeSelect.value;
-
-  if (!provaName || !provaType) {
-    alert("Por favor, preencha todos os campos para cadastrar uma nova prova.");
-    return;
+    const val = input.value.trim();
+    if (val !== "") {
+      updates[`prova${i}/resultado`] = val;
+    }
   }
 
-  // Identificar a próxima prova (prova1, prova2, prova3)
-  db.ref(`provas`).once("value").then(snapshot => {
-    const provasCount = snapshot.numChildren();
-    const newProvaKey = `prova${provasCount + 1}`;
-
-    const newProvaData = {
-      nome: provaName,
-      tipo: provaType
-    };
-
-    // Adicionar ao Firebase
-    db.ref(`provas/${newProvaKey}`)
-      .set(newProvaData)
-      .then(() => {
-        alert("Prova cadastrada com sucesso!");
-        provaNameInput.value = ""; // Limpar o campo de entrada
-        renderAdmin(); // Recarregar a lista de provas
-      })
-      .catch(err => {
-        console.error("Erro ao cadastrar nova prova:", err);
-        alert("Ocorreu um erro ao cadastrar a nova prova. Verifique o console para mais detalhes.");
-      });
-  });
-}
-
-// Retornar pontos com base no rank
-function pontosPorPosicao(pos) {
-  if (pos === 1) return 100;
-  if (pos === 2) return 90;
-  if (pos === 3) return 85;
-  if (pos === 4) return 80;
-  if (pos === 5) return 75;
-  if (pos === 6) return 70;
-  if (pos === 7) return 65;
-  if (pos === 8) return 60;
-  if (pos === 9) return 55;
-  return 50;
-}
-
-// Converter mm:ss para segundos
-function convertToSeconds(time) {
-  const parts = time.split(":");
-  if (parts.length === 2) {
-    const minutes = parseInt(parts[0], 10);
-    const seconds = parseInt(parts[1], 10);
-    return minutes * 60 + seconds;
-  }
-  return parseFloat(time);
+  // Atualizar resultados no Firebase
+  db.ref(`categories/${category}/teams/${teamName}`).update(updates).then(() => {
+    // Recalcular rankings e pontos
+    calculateRanking(category);
+    alert("Resultado salvo com sucesso!");
+  }).catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
 // Renderizar interface de administração
