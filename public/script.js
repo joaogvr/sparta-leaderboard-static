@@ -51,23 +51,10 @@ function renderLeaderboard(category) {
       return;
     }
 
-    // Transformar os dados em uma lista e calcular o total
-    const teamList = Object.entries(teams).map(([teamName, teamData]) => {
-      const total = 
-        (teamData.prova1?.pontos || 0) +
-        (teamData.prova2?.pontos || 0) +
-        (teamData.prova3?.pontos || 0);
-      return { teamName, ...teamData, total };
-    });
-
-    // Ordenar a lista pelo total em ordem decrescente
-    teamList.sort((a, b) => b.total - a.total);
-
     // Cabeçalho da tabela
     let table = `<table>
       <thead>
         <tr>
-          <th>Rank</th>
           <th>Dupla</th>
           <th>Box</th>
           <th>P1 Resultado</th>
@@ -83,23 +70,22 @@ function renderLeaderboard(category) {
         </tr>
       </thead>
       <tbody>`;
-
+    
     // Preenchendo os dados da tabela
-    teamList.forEach((team, index) => {
+    Object.entries(teams).forEach(([teamName, teamData]) => {
       table += `<tr>
-        <td>${index + 1}</td>
-        <td>${team.teamName}</td>
-        <td>${team.box || '-'}</td>
-        <td>${team.prova1?.resultado || '-'}</td>
-        <td>${team.prova1?.rank || '-'}</td>
-        <td>${team.prova1?.pontos || '-'}</td>
-        <td>${team.prova2?.resultado || '-'}</td>
-        <td>${team.prova2?.rank || '-'}</td>
-        <td>${team.prova2?.pontos || '-'}</td>
-        <td>${team.prova3?.resultado || '-'}</td>
-        <td>${team.prova3?.rank || '-'}</td>
-        <td>${team.prova3?.pontos || '-'}</td>
-        <td>${team.total}</td>
+        <td>${teamName}</td>
+        <td>${teamData.box || '-'}</td>
+        <td>${teamData.prova1?.resultado || '-'}</td>
+        <td>${teamData.prova1?.rank || '-'}</td>
+        <td>${teamData.prova1?.pontos || '-'}</td>
+        <td>${teamData.prova2?.resultado || '-'}</td>
+        <td>${teamData.prova2?.rank || '-'}</td>
+        <td>${teamData.prova2?.pontos || '-'}</td>
+        <td>${teamData.prova3?.resultado || '-'}</td>
+        <td>${teamData.prova3?.rank || '-'}</td>
+        <td>${teamData.prova3?.pontos || '-'}</td>
+        <td>${teamData.total || '-'}</td>
       </tr>`;
     });
 
