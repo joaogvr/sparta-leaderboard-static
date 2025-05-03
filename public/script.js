@@ -17,109 +17,191 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// Adicionar uma nova dupla
-function addTeam(event) {
-  event.preventDefault(); // Previne o reload da página
-
-  const teamNameInput = document.getElementById("teamName");
-  const boxNameInput = document.getElementById("boxName");
-  const categorySelect = document.getElementById("category");
-
-  const teamName = teamNameInput.value.trim();
-  const box = boxNameInput.value.trim();
-  const category = categorySelect.value;
-
-  if (!teamName || !box || !category) {
-    alert("Por favor, preencha todos os campos para adicionar uma nova dupla.");
-    return;
-  }
-
-  const newTeamData = {
-    box,
-    prova1: { resultado: "", rank: null, pontos: null },
-    prova2: { resultado: "", rank: null, pontos: null },
-    prova3: { resultado: "", rank: null, pontos: null },
-    total: 0
-  };
-
-  db.ref(`categories/${category}/teams/${teamName}`)
-    .set(newTeamData)
-    .then(() => {
-      alert("Dupla adicionada com sucesso!");
-      teamNameInput.value = ""; // Limpa o campo de entrada
-      boxNameInput.value = ""; // Limpa o campo de entrada
-      renderAdmin(); // Atualiza a lista de equipes
-    })
-    .catch((err) => {
-      console.error("Erro ao adicionar nova dupla:", err);
-      alert("Ocorreu um erro ao adicionar a nova dupla. Verifique o console para mais detalhes.");
+// Configurar os tabs de categorias
+function setupTabs() {
+  const tabsDiv = document.getElementById("tabs");
+  db.ref("categories").once("value").then(snapshot => {
+    tabsDiv.innerHTML = ""; // Limpa tabs existentes
+    snapshot.forEach(category => {
+      const categoryName = category.key;
+      const tab = document.createElement("div");
+      tab.className = "tab";
+      tab.textContent = categoryName;
+      tab.onclick = () => renderLeaderboard(categoryName);
+      tabsDiv.appendChild(tab);
     });
+
+    // Ativar o primeiro tab por padrão
+    if (tabsDiv.firstChild) {
+      tabsDiv.firstChild.classList.add("active");
+      renderLeaderboard(snapshot.val() ? Object.keys(snapshot.val())[0] : null);
+    }
+  });
 }
 
-// Cadastrar uma nova prova
-function addProva(event) {
-  event.preventDefault(); // Previne o reload da página
+// Renderizar o leaderboard para uma categoria
+function renderLeaderboard(category) {
+  if (!category) return;
 
-  const provaInput = document.getElementById("provaInput");
-  const tipoProvaInput = document.getElementById("tipoProvaInput");
+  const leaderboardDiv = document.getElementById("leaderboard");
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = snapshot.val();
+    if (!teams) {
+      leaderboardDiv.innerHTML = "<p>Nenhum dado encontrado.</p>";
+      return;
+    }
 
-  const provaName = provaInput.value.trim();
-  const provaType = tipoProvaInput.value;
+    // Cabeçalho da tabela
+    let table = `<table>
+      <thead>
+        <tr>
+          <th>Dupla</th>
+          <th>Box</th>
+          <th>P1 Resultado</th>
+          <th>P1 Rank</th>
+          <th>P1 Pontos</th>
+          <th>P2 Resultado</th>
+          <th>P2 Rank</th>
+          <th>P2 Pontos</th>
+          <th>P3 Resultado</th>
+          <th>P3 Rank</th>
+          <th>P3 Pontos</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    
+    // Preenchendo os dados da tabela
+    Object.entries(teams).forEach(([teamName, teamData]) => {
+      table += `<tr>
+        <td>${teamName}</td>
+        <td>${teamData.box || '-'}</td>
+        <td>${teamData.prova1?.resultado || '-'}</td>
+        <td>${teamData.prova1?.rank || '-'}</td>
+        <td>${teamData.prova1?.pontos || '-'}</td>
+        <td>${teamData.prova2?.resultado || '-'}</td>
+        <td>${teamData.prova2?.rank || '-'}</td>
+        <td>${teamData.prova2?.pontos || '-'}</td>
+        <td>${teamData.prova3?.resultado || '-'}</td>
+        <td>${teamData.prova3?.rank || '-'}</td>
+        <td>${teamData.prova3?.pontos || '-'}</td>
+        <td>${teamData.total || '-'}</td>
+      </tr>`;
+    });
 
-  if (!provaName || !provaType) {
-    alert("Por favor, preencha todos os campos para cadastrar uma nova prova.");
-    return;
-  }
+    table += `</tbody></table>`;
+    leaderboardDiv.innerHTML = table;
 
-  db.ref("provas")
-    .once("value")
-    .then((snapshot) => {
-      const provasCount = snapshot.numChildren();
-      const newProvaKey = `prova${provasCount + 1}`;
+    // Marcar o tab como ativo
+    document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+    Array.from(document.querySelectorAll(".tab")).find(tab => tab.textContent === category).classList.add("active");
+  }).catch(err => {
+    console.error("Erro ao buscar dados:", err);
+    leaderboardDiv.innerHTML = "<p>Erro ao carregar leaderboard.</p>";
+  });
+}
 
-      const newProvaData = {
-        nome: provaName,
-        tipo: provaType
-      };
+// Função para calcular os ranks e pontos
+function calculateRanking(category) {
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = [];
+    snapshot.forEach(teamSnap => {
+      const team = teamSnap.val();
+      team.name = teamSnap.key;
+      teams.push(team);
+    });
 
-      db.ref(`provas/${newProvaKey}`)
-        .set(newProvaData)
-        .then(() => {
-          alert("Prova cadastrada com sucesso!");
-          provaInput.value = ""; // Limpa o campo de entrada
-          renderAdmin(); // Atualiza a lista de provas
-        })
-        .catch((err) => {
-          console.error("Erro ao cadastrar nova prova:", err);
-          alert("Ocorreu um erro ao cadastrar a nova prova. Verifique o console para mais detalhes.");
+    const provas = [1, 2, 3];
+    provas.forEach(prova => {
+      db.ref(`provas/prova${prova}`).once("value").then(provaSnapshot => {
+        const provaType = provaSnapshot.val()?.tipo; // Tipo da prova
+        const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
+
+        // Converter resultados para segundos ou deixar como está
+        teamsWithResults.forEach(team => {
+          const resultado = team[`prova${prova}`]?.resultado;
+          team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
+            ? convertToSeconds(resultado) // Converte mm:ss para segundos
+            : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
         });
+
+        // Ordenar os resultados com base no tipo da prova
+        if (provaType === "FOR TIME") {
+          // Menor é melhor
+          teamsWithResults.sort((a, b) =>
+            a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
+          );
+        } else if (provaType === "CARGA" || provaType === "AMRAP") {
+          // Maior é melhor
+          teamsWithResults.sort((a, b) =>
+            b[`prova${prova}`].resultado_convertido - a[`prova${prova}`].resultado_convertido
+          );
+        }
+
+        // Atribuir rank e pontos
+        teamsWithResults.forEach((team, index) => {
+          const rank = index + 1;
+          const pontos = pontosPorPosicao(rank);
+
+          // Atualizar no Firebase
+          db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+            rank,
+            pontos
+          });
+        });
+      }).catch(err => console.error(`Erro ao buscar tipo da prova ${prova}:`, err));
     });
+  }).catch(err => console.error("Erro ao calcular ranking:", err));
 }
 
-// Renderizar a interface de administração
+// Retornar pontos com base no rank
+function pontosPorPosicao(pos) {
+  if (pos === 1) return 100;
+  if (pos === 2) return 90;
+  if (pos === 3) return 85;
+  if (pos === 4) return 80;
+  if (pos === 5) return 75;
+  if (pos === 6) return 70;
+  if (pos === 7) return 65;
+  if (pos === 8) return 60;
+  if (pos === 9) return 55;
+  return 50;
+}
+
+// Converter mm:ss para segundos
+function convertToSeconds(time) {
+  const parts = time.split(":");
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10);
+    const seconds = parseInt(parts[1], 10);
+    return minutes * 60 + seconds;
+  }
+  return parseFloat(time);
+}
+
+// Renderizar interface de administração
 function renderAdmin(initialLoad = false) {
   const teamsList = document.getElementById("teamsList");
 
   function loadTeams() {
-    db.ref("categories").once("value").then((snapshot) => {
+    db.ref("categories").once("value").then(snapshot => {
       teamsList.innerHTML = "";
-      snapshot.forEach((cat) => {
+      snapshot.forEach(cat => {
         const category = cat.key;
 
         // Listar equipes existentes
-        cat.child("teams").forEach((teamSnap) => {
+        cat.child("teams").forEach(teamSnap => {
           const team = teamSnap.key;
           const data = teamSnap.val();
           const div = document.createElement("div");
           div.className = "card";
           div.innerHTML = `
             <h3>${team}</h3><p>${data.box} (${category})</p>
-            ${[1, 2, 3].map(
-              (i) =>
-                `<input type="text" id="res-${category}-${team}-p${i}" 
-                value="${data["prova" + i]?.resultado ?? ""}" 
+            ${[1, 2, 3].map(i =>
+              `<input type="text" id="res-${category}-${team}-p${i}" 
+                value="${data['prova' + i]?.resultado ?? ''}" 
                 placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
-            ).join("")}
+            ).join('')}
             <div class="btns">
               <button onclick="saveResults('${category}', '${team}')">Salvar</button>
               <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
@@ -139,7 +221,6 @@ function renderAdmin(initialLoad = false) {
   };
 
   if (initialLoad) {
-    // Associa os eventos aos formulários
     document.getElementById("addForm").addEventListener("submit", addTeam);
     document.getElementById("provaForm").addEventListener("submit", addProva);
   }
@@ -163,14 +244,15 @@ function saveResults(category, teamName) {
   db.ref(`categories/${category}/teams/${teamName}`)
     .update(updates)
     .then(() => {
+      calculateRanking(category);
       alert("Resultado salvo com sucesso!");
     })
-    .catch((err) => {
-      console.error("Erro ao salvar resultados:", err);
-    });
+    .catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
 // Inicializar ao carregar a página
 window.onload = function () {
   initFirebase();
+  setupTabs();
+  renderAdmin(true);
 };
