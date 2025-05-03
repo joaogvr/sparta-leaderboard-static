@@ -17,15 +17,6 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// Converter MM:SS para segundos (apenas para cálculos)
-function convertToSeconds(mmss) {
-  const parts = mmss.split(":").map(Number);
-  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-    return parts[0] * 60 + parts[1];
-  }
-  return null; // Retorno inválido para entrada inválida
-}
-
 // Função para carregar a página de administração
 function renderAdmin() {
   const teamsList = document.getElementById("teamsList");
@@ -77,9 +68,9 @@ function renderAdmin() {
         const tipo = tipos[`prova${i}`];
 
         if (tipo === "FOR TIME") {
-          // Salvar o valor no formato MM:SS diretamente no banco
+          // Validar e salvar o valor no formato MM:SS diretamente no banco como string
           if (/^\d{2}:\d{2}$/.test(val)) {
-            updates[`prova${i}/resultado`] = val; // Salvar o valor no formato MM:SS
+            updates[`prova${i}/resultado`] = val; // Salvar como string no formato MM:SS
           } else {
             alert(`Por favor, insira um tempo válido no formato MM:SS para a Prova ${i}`);
             return;
@@ -97,20 +88,18 @@ function renderAdmin() {
       }
     }
 
-    await db.ref(`categories/${category}/teams/${team}`).update(updates);
+    try {
+      await db.ref(`categories/${category}/teams/${team}`).update(updates);
 
-    const snap = await db.ref(`categories/${category}/teams`).once("value");
-    const teams = [];
-    snap.forEach(ts => {
-      const t = ts.val();
-      t.name = ts.key;
-      t.category = category;
-      teams.push(t);
-    });
+      // Exibir alerta de confirmação
+      alert("Resultado salvo com sucesso!");
 
-    await calculateRanking(teams);
-    alert("Resultado salvo com sucesso!");
-    loadTeams();
+      // Recarregar os dados
+      loadTeams();
+    } catch (error) {
+      alert("Erro ao salvar os dados. Tente novamente.");
+      console.error(error);
+    }
   };
 
   // Função para deletar equipe
@@ -150,9 +139,7 @@ function renderAdmin() {
   loadTeams();
 }
 
-// Pontuação e ranking continuam iguais (não alterados para este exemplo)
-
-// Inicialização ao carregar a página
+// Inicializar ao carregar a página
 window.onload = function () {
   initFirebase();
   renderAdmin();
