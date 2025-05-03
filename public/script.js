@@ -158,49 +158,52 @@ function addTeam(event) {
 function renderAdmin(initialLoad = false) {
   const teamsList = document.getElementById("teamsList");
 
-  function loadTeams() {
-    db.ref("categories").once("value").then(snapshot => {
-      teamsList.innerHTML = "";
-      snapshot.forEach(cat => {
-        const category = cat.key;
+  // Limpar a lista antes de renderizar novamente
+  teamsList.innerHTML = "";
 
-        // Listar equipes existentes
-        cat.child("teams").forEach(teamSnap => {
-          const team = teamSnap.key;
-          const data = teamSnap.val();
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <h3>${team}</h3><p>${data.box} (${category})</p>
-            ${[1, 2, 3].map(i =>
-              `<input type="text" id="res-${category}-${team}-p${i}" 
-                value="${data['prova' + i]?.resultado ?? ''}" 
-                placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
-            ).join('')}
-            <div class="btns">
-              <button onclick="saveResults('${category}', '${team}')">Salvar</button>
-              <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
-            </div>
-          `;
-          teamsList.appendChild(div);
-        });
+  // Buscar categorias e equipes no Firebase
+  db.ref("categories").once("value").then(snapshot => {
+    if (!snapshot.exists()) {
+      teamsList.innerHTML = "<p>Nenhuma dupla encontrada.</p>";
+      return;
+    }
+
+    snapshot.forEach(categorySnap => {
+      const category = categorySnap.key;
+
+      // Verificar se existem equipes na categoria
+      const teams = categorySnap.child("teams");
+      if (!teams.exists()) return;
+
+      teams.forEach(teamSnap => {
+        const teamName = teamSnap.key;
+        const teamData = teamSnap.val();
+
+        // Criar um card para cada equipe
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <h3>${teamName}</h3>
+          <p>${teamData.box} (${category})</p>
+          ${[1, 2, 3]
+            .map(
+              prova =>
+                `<input type="text" id="res-${category}-${teamName}-p${prova}" 
+                  value="${teamData[`prova${prova}`]?.resultado || ""}" 
+                  placeholder="Resultado P${prova} (Ex: 02:54, 100kg, reps)">`
+            )
+            .join("")}
+          <div class="btns">
+            <button onclick="saveResults('${category}', '${teamName}')">Salvar</button>
+            <button onclick="deleteTeam('${category}', '${teamName}')" style="background: darkred;">Excluir</button>
+          </div>
+        `;
+
+        teamsList.appendChild(card);
       });
     });
-  }
-
-  // Função para deletar uma equipe
-  window.deleteTeam = function (category, team) {
-    if (confirm(`Remover ${team}?`)) {
-      db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
-    }
-  };
-
-  if (initialLoad) {
-    document.getElementById("addForm").addEventListener("submit", addTeam);
-    document.getElementById("provaForm").addEventListener("submit", addProva);
-  }
-
-  loadTeams();
+  });
 }
 
 // Salvar resultados de uma equipe
@@ -219,10 +222,23 @@ function saveResults(category, teamName) {
   db.ref(`categories/${category}/teams/${teamName}`)
     .update(updates)
     .then(() => {
-      calculateRanking(category);
-      alert("Resultado salvo com sucesso!");
+      alert("Resultados salvos com sucesso!");
+      renderAdmin(); // Atualiza a lista de equipes
     })
     .catch(err => console.error("Erro ao salvar resultados:", err));
+}
+
+// Excluir uma equipe
+function deleteTeam(category, teamName) {
+  if (!confirm(`Tem certeza que deseja excluir a dupla "${teamName}" da categoria "${category}"?`)) return;
+
+  db.ref(`categories/${category}/teams/${teamName}`)
+    .remove()
+    .then(() => {
+      alert("Dupla excluída com sucesso!");
+      renderAdmin(); // Atualiza a lista de equipes
+    })
+    .catch(err => console.error("Erro ao excluir a dupla:", err));
 }
 
 // Inicializar ao carregar a página
