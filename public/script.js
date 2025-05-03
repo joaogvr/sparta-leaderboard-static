@@ -36,7 +36,7 @@ function renderAdmin() {
             ${[1, 2, 3].map(i =>
               `<input type="text" id="res-${category}-${team}-p${i}" 
                 value="${data['prova' + i]?.resultado ?? ''}" 
-                placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
+                placeholder="Resultado P${i} (Ex: 03:33, 100kg, reps)">`
             ).join('')}
             <div class="btns">
               <button onclick="saveResults('${category}', '${team}')">Salvar</button>
@@ -68,8 +68,10 @@ function renderAdmin() {
           // Tratar entrada de tempo no formato MM:SS
           const timeParts = val.split(":").map(Number);
           if (timeParts.length === 2 && !isNaN(timeParts[0]) && !isNaN(timeParts[1])) {
-            const seconds = timeParts[0] * 60 + timeParts[1]; // Converter minutos e segundos para segundos totais
-            updates[`prova${i}/resultado`] = seconds; // Salvar o tempo em segundos no Firebase
+            const minutes = timeParts[0];
+            const seconds = timeParts[1];
+            const totalSeconds = minutes * 60 + seconds; // Converter minutos e segundos para segundos totais
+            updates[`prova${i}/resultado`] = totalSeconds; // Salvar o tempo em segundos no Firebase
           } else {
             alert(`Por favor, insira um tempo válido no formato MM:SS para a Prova ${i}`);
             return;
