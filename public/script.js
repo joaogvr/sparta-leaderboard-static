@@ -175,6 +175,110 @@ function saveResults(category, teamName) {
   }).catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
+// Função para adicionar uma nova dupla
+function addTeam() {
+  const teamNameInput = document.getElementById("team-name");
+  const boxInput = document.getElementById("team-box");
+  const categorySelect = document.getElementById("team-category");
+
+  // Verificar se os campos estão preenchidos
+  const teamName = teamNameInput.value.trim();
+  const box = boxInput.value.trim();
+  const category = categorySelect.value;
+
+  if (!teamName || !box || !category) {
+    alert("Por favor, preencha todos os campos para adicionar uma nova dupla.");
+    return;
+  }
+
+  // Dados iniciais para a nova dupla
+  const newTeamData = {
+    box,
+    prova1: { resultado: "", rank: null, pontos: null },
+    prova2: { resultado: "", rank: null, pontos: null },
+    prova3: { resultado: "", rank: null, pontos: null },
+    total: 0
+  };
+
+  // Adicionar ao Firebase
+  db.ref(`categories/${category}/teams/${teamName}`)
+    .set(newTeamData)
+    .then(() => {
+      alert("Dupla adicionada com sucesso!");
+      teamNameInput.value = ""; // Limpar o campo de entrada
+      boxInput.value = ""; // Limpar o campo de entrada
+      renderAdmin(); // Recarregar a lista de equipes
+    })
+    .catch(err => {
+      console.error("Erro ao adicionar nova dupla:", err);
+      alert("Ocorreu um erro ao adicionar a nova dupla. Verifique o console para mais detalhes.");
+    });
+}
+
+// Função para cadastrar uma nova prova
+function addProva() {
+  const provaNameInput = document.getElementById("prova-name");
+  const provaTypeSelect = document.getElementById("prova-type");
+
+  // Verificar se os campos estão preenchidos
+  const provaName = provaNameInput.value.trim();
+  const provaType = provaTypeSelect.value;
+
+  if (!provaName || !provaType) {
+    alert("Por favor, preencha todos os campos para cadastrar uma nova prova.");
+    return;
+  }
+
+  // Identificar a próxima prova (prova1, prova2, prova3)
+  db.ref(`provas`).once("value").then(snapshot => {
+    const provasCount = snapshot.numChildren();
+    const newProvaKey = `prova${provasCount + 1}`;
+
+    const newProvaData = {
+      nome: provaName,
+      tipo: provaType
+    };
+
+    // Adicionar ao Firebase
+    db.ref(`provas/${newProvaKey}`)
+      .set(newProvaData)
+      .then(() => {
+        alert("Prova cadastrada com sucesso!");
+        provaNameInput.value = ""; // Limpar o campo de entrada
+        renderAdmin(); // Recarregar a lista de provas
+      })
+      .catch(err => {
+        console.error("Erro ao cadastrar nova prova:", err);
+        alert("Ocorreu um erro ao cadastrar a nova prova. Verifique o console para mais detalhes.");
+      });
+  });
+}
+
+// Retornar pontos com base no rank
+function pontosPorPosicao(pos) {
+  if (pos === 1) return 100;
+  if (pos === 2) return 90;
+  if (pos === 3) return 85;
+  if (pos === 4) return 80;
+  if (pos === 5) return 75;
+  if (pos === 6) return 70;
+  if (pos === 7) return 65;
+  if (pos === 8) return 60;
+  if (pos === 9) return 55;
+  return 50;
+}
+
+// Converter mm:ss para segundos
+function convertToSeconds(time) {
+  const parts = time.split(":");
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10);
+    const seconds = parseInt(parts[1], 10);
+    return minutes * 60 + seconds;
+  }
+  return parseFloat(time);
+}
+
 // Renderizar interface de administração
 function renderAdmin() {
   const teamsList = document.getElementById("teamsList");
@@ -184,17 +288,6 @@ function renderAdmin() {
       teamsList.innerHTML = "";
       snapshot.forEach(cat => {
         const category = cat.key;
-
-        // Formulário para adicionar nova dupla (INSERIR AQUI)
-        const addTeamForm = `
-          <div class="add-team-form">
-            <h3>Adicionar Nova Dupla - ${category}</h3>
-            <input type="text" id="new-team-name-${category}" placeholder="Nome da Dupla">
-            <input type="text" id="new-team-box-${category}" placeholder="Box">
-            <button onclick="addTeam('${category}')">Adicionar</button>
-          </div>
-        `;
-        teamsList.innerHTML += addTeamForm;
 
         // Listar equipes existentes
         cat.child("teams").forEach(teamSnap => {
@@ -220,7 +313,7 @@ function renderAdmin() {
     });
   }
 
-  // Função para deletar uma equipe (já existente)
+  // Função para deletar uma equipe
   window.deleteTeam = function (category, team) {
     if (confirm(`Remover ${team}?`)) {
       db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
@@ -229,6 +322,7 @@ function renderAdmin() {
 
   loadTeams();
 }
+
 // Inicializar ao carregar a página
 window.onload = function () {
   initFirebase();
