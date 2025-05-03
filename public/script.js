@@ -17,20 +17,13 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// Converter MM:SS para segundos
+// Converter MM:SS para segundos (apenas para cálculos)
 function convertToSeconds(mmss) {
   const parts = mmss.split(":").map(Number);
   if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
     return parts[0] * 60 + parts[1];
   }
   return null; // Retorno inválido para entrada inválida
-}
-
-// Converter segundos para MM:SS
-function convertToMMSS(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
 // Função para carregar a página de administração
@@ -50,13 +43,10 @@ function renderAdmin() {
           div.innerHTML = `
             <h3>${team}</h3><p>${data.box} (${category})</p>
             ${[1, 2, 3].map(i => {
-              const resultado = data[`prova${i}`]?.resultado;
-              const displayValue = resultado != null && data[`prova${i}`]?.tipo === "FOR TIME" 
-                                   ? convertToMMSS(resultado) 
-                                   : resultado || "";
+              const resultado = data[`prova${i}`]?.resultado || "";
               return `
                 <input type="text" id="res-${category}-${team}-p${i}" 
-                  value="${displayValue}" 
+                  value="${resultado}" 
                   placeholder="Resultado P${i} (Ex: 03:33, 100kg, reps)">
               `;
             }).join('')}
@@ -87,10 +77,9 @@ function renderAdmin() {
         const tipo = tipos[`prova${i}`];
 
         if (tipo === "FOR TIME") {
-          // Converter MM:SS para segundos
-          const seconds = convertToSeconds(val);
-          if (seconds !== null) {
-            updates[`prova${i}/resultado`] = seconds; // Salvar o tempo em segundos no Firebase
+          // Salvar o valor no formato MM:SS diretamente no banco
+          if (/^\d{2}:\d{2}$/.test(val)) {
+            updates[`prova${i}/resultado`] = val; // Salvar o valor no formato MM:SS
           } else {
             alert(`Por favor, insira um tempo válido no formato MM:SS para a Prova ${i}`);
             return;
