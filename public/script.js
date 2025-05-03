@@ -51,13 +51,9 @@ function renderLeaderboard(category) {
       return;
     }
 
-    // Transformar os dados em uma lista e calcular o total
+    // Transformar os dados em uma lista
     const teamList = Object.entries(teams).map(([teamName, teamData]) => {
-      const total = 
-        (teamData.prova1?.pontos || 0) +
-        (teamData.prova2?.pontos || 0) +
-        (teamData.prova3?.pontos || 0);
-      return { teamName, ...teamData, total };
+      return { teamName, ...teamData };
     });
 
     // Ordenar a lista pelo total em ordem decrescente
@@ -99,7 +95,7 @@ function renderLeaderboard(category) {
         <td>${team.prova3?.resultado || '-'}</td>
         <td>${team.prova3?.rank || '-'}</td>
         <td>${team.prova3?.pontos || '-'}</td>
-        <td>${team.total}</td>
+        <td>${team.total || 0}</td>
       </tr>`;
     });
 
@@ -155,7 +151,7 @@ function addTeam(event) {
 }
 
 // Renderizar interface de administração
-function renderAdmin(initialLoad = false) {
+function renderAdmin() {
   const teamsList = document.getElementById("teamsList");
 
   // Limpar a lista antes de renderizar novamente
@@ -222,6 +218,7 @@ function saveResults(category, teamName) {
   db.ref(`categories/${category}/teams/${teamName}`)
     .update(updates)
     .then(() => {
+      calculateRanking(category);
       alert("Resultados salvos com sucesso!");
       renderAdmin(); // Atualiza a lista de equipes
     })
@@ -241,9 +238,40 @@ function deleteTeam(category, teamName) {
     .catch(err => console.error("Erro ao excluir a dupla:", err));
 }
 
+// Calcular ranking e pontos
+function calculateRanking(category) {
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = [];
+    snapshot.forEach(teamSnap => {
+      const team = teamSnap.val();
+      team.name = teamSnap.key;
+      teams.push(team);
+    });
+
+    const provas = [1, 2, 3];
+    provas.forEach(prova => {
+      const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
+
+      // Ordenar os resultados
+      teamsWithResults.sort((a, b) => parseFloat(a[`prova${prova}`].resultado) - parseFloat(b[`prova${prova}`].resultado));
+
+      // Atribuir rank e pontos
+      teamsWithResults.forEach((team, index) => {
+        const rank = index + 1;
+        const pontos = 100 - (rank - 1) * 10; // Exemplo de cálculo de pontos
+
+        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+          rank,
+          pontos
+        });
+      });
+    });
+  });
+}
+
 // Inicializar ao carregar a página
 window.onload = function () {
   initFirebase();
   setupTabs();
-  renderAdmin(true);
+  renderAdmin();
 };
