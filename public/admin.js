@@ -174,10 +174,42 @@ function saveResults(category, teamName) {
   db.ref(`categories/${category}/teams/${teamName}`)
     .update(updates)
     .then(() => {
+      calculateRanking(category); // Recalcular ranking e pontos
       alert("Resultados salvos com sucesso!");
       renderAdmin(); // Atualiza a lista de equipes
     })
     .catch(err => console.error("Erro ao salvar resultados:", err));
+}
+
+// Calcular ranking e pontos
+function calculateRanking(category) {
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = [];
+    snapshot.forEach(teamSnap => {
+      const team = teamSnap.val();
+      team.name = teamSnap.key;
+      teams.push(team);
+    });
+
+    const provas = [1, 2, 3];
+    provas.forEach(prova => {
+      const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
+
+      // Ordenar os resultados
+      teamsWithResults.sort((a, b) => parseFloat(a[`prova${prova}`].resultado) - parseFloat(b[`prova${prova}`].resultado));
+
+      // Atribuir rank e pontos
+      teamsWithResults.forEach((team, index) => {
+        const rank = index + 1;
+        const pontos = 100 - (rank - 1) * 10; // Exemplo de cálculo de pontos
+
+        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+          rank,
+          pontos
+        });
+      });
+    });
+  });
 }
 
 // Excluir uma equipe
