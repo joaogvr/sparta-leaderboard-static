@@ -58,47 +58,72 @@ function addTeam(event) {
     });
 }
 
-// Cadastrar uma nova prova
-function addProva(event) {
-  event.preventDefault(); // Previne o reload da página
+// Salvar resultados de uma equipe
+function saveResults(category, teamName) {
+  const updates = {};
+  for (let i = 1; i <= 3; i++) {
+    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
+    if (!input) continue;
 
-  const provaInput = document.getElementById("provaInput");
-  const tipoProvaInput = document.getElementById("tipoProvaInput");
-
-  const provaName = provaInput.value.trim();
-  const provaType = tipoProvaInput.value;
-
-  if (!provaName || !provaType) {
-    alert("Por favor, preencha todos os campos para cadastrar uma nova prova.");
-    return;
+    const val = input.value.trim();
+    if (val !== "") {
+      updates[`prova${i}/resultado`] = val;
+    }
   }
 
-  db.ref("provas")
-    .once("value")
-    .then(snapshot => {
-      const provasCount = snapshot.numChildren();
-      const newProvaKey = `prova${provasCount + 1}`;
-
-      const newProvaData = {
-        nome: provaName,
-        tipo: provaType
-      };
-
-      db.ref(`provas/${newProvaKey}`)
-        .set(newProvaData)
-        .then(() => {
-          alert("Prova cadastrada com sucesso!");
-          provaInput.value = ""; // Limpar o campo de input
-          renderAdmin(); // Atualizar a lista de provas
-        })
-        .catch(err => {
-          console.error("Erro ao cadastrar nova prova:", err);
-          alert("Ocorreu um erro ao cadastrar a nova prova. Verifique o console para mais detalhes.");
-        });
-    });
+  db.ref(`categories/${category}/teams/${teamName}`)
+    .update(updates)
+    .then(() => {
+      calculateRanking(category); // Recalcular ranking e pontos
+      alert("Resultados salvos com sucesso!");
+      renderAdmin(); // Atualiza a lista de equipes
+    })
+    .catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
-// Renderizar interface de administração (lista de duplas e provas)
+// Calcular ranking e pontos
+function calculateRanking(category) {
+  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
+    const teams = [];
+    snapshot.forEach(teamSnap => {
+      const team = teamSnap.val();
+      team.name = teamSnap.key;
+      teams.push(team);
+    });
+
+    const provas = [1, 2, 3];
+    provas.forEach(prova => {
+      const teamsWithResults = teams.filter(team => {
+        const resultado = team[`prova${prova}`]?.resultado;
+        return resultado !== null && resultado !== "";
+      });
+
+      // Ordenar os resultados (convertendo para número quando necessário)
+      teamsWithResults.sort((a, b) => parseFloat(a[`prova${prova}`].resultado) - parseFloat(b[`prova${prova}`].resultado));
+
+      // Atribuir rank e pontos
+      teamsWithResults.forEach((team, index) => {
+        const rank = index + 1;
+        const pontos = 100 - (rank - 1) * 10; // Exemplo de cálculo: 1º lugar = 100 pontos, 2º = 90, etc.
+
+        const teamRef = db.ref(`categories/${category}/teams/${team.name}/prova${prova}`);
+        teamRef.update({ rank, pontos }).catch(err => console.error("Erro ao atualizar rank/pontos:", err));
+      });
+    });
+
+    // Recalcular o total de pontos para cada equipe
+    teams.forEach(team => {
+      const total =
+        (team.prova1?.pontos || 0) +
+        (team.prova2?.pontos || 0) +
+        (team.prova3?.pontos || 0);
+
+      db.ref(`categories/${category}/teams/${team.name}`).update({ total });
+    });
+  });
+}
+
+// Renderizar interface de administração
 function renderAdmin(initialLoad = false) {
   const teamsList = document.getElementById("teamsList");
 
@@ -149,67 +174,11 @@ function renderAdmin(initialLoad = false) {
     });
   });
 
-  // Se for o primeiro carregamento, conectar os formulários às funções
+  // Conectar os formulários às funções se for o primeiro carregamento
   if (initialLoad) {
     const addForm = document.getElementById("addForm");
-    const provaForm = document.getElementById("provaForm");
     addForm.addEventListener("submit", addTeam);
-    provaForm.addEventListener("submit", addProva);
   }
-}
-
-// Salvar resultados de uma equipe
-function saveResults(category, teamName) {
-  const updates = {};
-  for (let i = 1; i <= 3; i++) {
-    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
-    if (!input) continue;
-
-    const val = input.value.trim();
-    if (val !== "") {
-      updates[`prova${i}/resultado`] = val;
-    }
-  }
-
-  db.ref(`categories/${category}/teams/${teamName}`)
-    .update(updates)
-    .then(() => {
-      calculateRanking(category); // Recalcular ranking e pontos
-      alert("Resultados salvos com sucesso!");
-      renderAdmin(); // Atualiza a lista de equipes
-    })
-    .catch(err => console.error("Erro ao salvar resultados:", err));
-}
-
-// Calcular ranking e pontos
-function calculateRanking(category) {
-  db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
-    const teams = [];
-    snapshot.forEach(teamSnap => {
-      const team = teamSnap.val();
-      team.name = teamSnap.key;
-      teams.push(team);
-    });
-
-    const provas = [1, 2, 3];
-    provas.forEach(prova => {
-      const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
-
-      // Ordenar os resultados
-      teamsWithResults.sort((a, b) => parseFloat(a[`prova${prova}`].resultado) - parseFloat(b[`prova${prova}`].resultado));
-
-      // Atribuir rank e pontos
-      teamsWithResults.forEach((team, index) => {
-        const rank = index + 1;
-        const pontos = 100 - (rank - 1) * 10; // Exemplo de cálculo de pontos
-
-        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
-          rank,
-          pontos
-        });
-      });
-    });
-  });
 }
 
 // Excluir uma equipe
