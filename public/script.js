@@ -113,32 +113,43 @@ function calculateRanking(category) {
 
     const provas = [1, 2, 3];
     provas.forEach(prova => {
-      const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
+      db.ref(`provas/prova${prova}`).once("value").then(provaSnapshot => {
+        const provaType = provaSnapshot.val()?.tipo; // Tipo da prova
+        const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
 
-      // Converter resultados para segundos ou manter como número
-      teamsWithResults.forEach(team => {
-        const resultado = team[`prova${prova}`]?.resultado;
-        team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
-          ? convertToSeconds(resultado) // Converte mm:ss para segundos
-          : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
-      });
-
-      // Ordenar por resultado (menor é melhor para tempo)
-      teamsWithResults.sort((a, b) =>
-        a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
-      );
-
-      // Atribuir rank e pontos
-      teamsWithResults.forEach((team, index) => {
-        const rank = index + 1;
-        const pontos = pontosPorPosicao(rank);
-
-        // Atualizar no Firebase
-        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
-          rank,
-          pontos
+        // Converter resultados para segundos ou deixar como está
+        teamsWithResults.forEach(team => {
+          const resultado = team[`prova${prova}`]?.resultado;
+          team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
+            ? convertToSeconds(resultado) // Converte mm:ss para segundos
+            : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
         });
-      });
+
+        // Ordenar os resultados com base no tipo da prova
+        if (provaType === "FOR TIME") {
+          // Menor é melhor
+          teamsWithResults.sort((a, b) =>
+            a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
+          );
+        } else if (provaType === "CARGA" || provaType === "AMRAP") {
+          // Maior é melhor
+          teamsWithResults.sort((a, b) =>
+            b[`prova${prova}`].resultado_convertido - a[`prova${prova}`].resultado_convertido
+          );
+        }
+
+        // Atribuir rank e pontos
+        teamsWithResults.forEach((team, index) => {
+          const rank = index + 1;
+          const pontos = pontosPorPosicao(rank);
+
+          // Atualizar no Firebase
+          db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+            rank,
+            pontos
+          });
+        });
+      }).catch(err => console.error(`Erro ao buscar tipo da prova ${prova}:`, err));
     });
   }).catch(err => console.error("Erro ao calcular ranking:", err));
 }
