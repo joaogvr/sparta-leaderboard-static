@@ -51,24 +51,40 @@ function renderLeaderboard(category) {
       return;
     }
 
+    // Cabeçalho da tabela
     let table = `<table>
       <thead>
         <tr>
-          <th>Equipe</th>
-          <th>Prova 1</th>
-          <th>Prova 2</th>
-          <th>Prova 3</th>
+          <th>Dupla</th>
+          <th>Box</th>
+          <th>P1 Resultado</th>
+          <th>P1 Rank</th>
+          <th>P1 Pontos</th>
+          <th>P2 Resultado</th>
+          <th>P2 Rank</th>
+          <th>P2 Pontos</th>
+          <th>P3 Resultado</th>
+          <th>P3 Rank</th>
+          <th>P3 Pontos</th>
           <th>Total</th>
         </tr>
       </thead>
       <tbody>`;
     
+    // Preenchendo os dados da tabela
     Object.entries(teams).forEach(([teamName, teamData]) => {
       table += `<tr>
         <td>${teamName}</td>
-        <td>${formatProva(teamData.prova1)}</td>
-        <td>${formatProva(teamData.prova2)}</td>
-        <td>${formatProva(teamData.prova3)}</td>
+        <td>${teamData.box || '-'}</td>
+        <td>${teamData.prova1?.resultado || '-'}</td>
+        <td>${teamData.prova1?.rank || '-'}</td>
+        <td>${teamData.prova1?.pontos || '-'}</td>
+        <td>${teamData.prova2?.resultado || '-'}</td>
+        <td>${teamData.prova2?.rank || '-'}</td>
+        <td>${teamData.prova2?.pontos || '-'}</td>
+        <td>${teamData.prova3?.resultado || '-'}</td>
+        <td>${teamData.prova3?.rank || '-'}</td>
+        <td>${teamData.prova3?.pontos || '-'}</td>
         <td>${teamData.total || '-'}</td>
       </tr>`;
     });
@@ -83,12 +99,6 @@ function renderLeaderboard(category) {
     console.error("Erro ao buscar dados:", err);
     leaderboardDiv.innerHTML = "<p>Erro ao carregar leaderboard.</p>";
   });
-}
-
-// Formatar uma prova para exibição
-function formatProva(prova) {
-  if (!prova) return "-";
-  return `Rank: ${prova.rank || '-'}, Pontos: ${prova.pontos || '-'}`;
 }
 
 // Função para calcular os ranks e pontos
