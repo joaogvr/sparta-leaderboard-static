@@ -56,29 +56,34 @@
       text-transform: uppercase;
     }
     .category-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 1rem;
     }
     .card {
       background: #111;
       padding: 1rem;
       border-radius: 8px;
+      width: 250px;
       box-shadow: 0 0 6px rgba(255, 255, 255, 0.05);
     }
     .card h3 {
       margin: 0;
+      font-size: 1.1rem;
     }
     .card p {
       margin: 0.3rem 0 0.7rem;
+      font-size: 0.95rem;
     }
     .card input {
-      width: 60px;
+      width: calc(100% / 3 - 0.5rem);
       margin-right: 0.3rem;
+      margin-bottom: 0.5rem;
     }
     .card button {
-      margin-top: 0.5rem;
       display: inline-block;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
     }
     .card button:last-child {
       background: darkred;
