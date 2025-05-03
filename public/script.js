@@ -34,7 +34,7 @@ function renderAdmin() {
           div.innerHTML = `
             <h3>${team}</h3><p>${data.box} (${category})</p>
             ${[1, 2, 3].map(i =>
-              `<input type="text" id="res-${category}-${team}-p${i}"
+              `<input type="text" id="res-${category}-${team}-p${i}" 
                 value="${data['prova' + i]?.resultado ?? ''}" 
                 placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
             ).join('')}
