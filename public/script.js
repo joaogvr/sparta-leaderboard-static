@@ -154,33 +154,72 @@ function calculateRanking(category) {
   }).catch(err => console.error("Erro ao calcular ranking:", err));
 }
 
-// Converter mm:ss para segundos
-function convertToSeconds(time) {
-  const parts = time.split(":");
-  if (parts.length === 2) {
-    const minutes = parseInt(parts[0], 10);
-    const seconds = parseInt(parts[1], 10);
-    return minutes * 60 + seconds;
+// Salvar resultados de uma equipe
+function saveResults(category, teamName) {
+  const updates = {};
+  for (let i = 1; i <= 3; i++) {
+    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
+    if (!input) continue;
+
+    const val = input.value.trim();
+    if (val !== "") {
+      updates[`prova${i}/resultado`] = val;
+    }
   }
-  return parseFloat(time);
+
+  // Atualizar resultados no Firebase
+  db.ref(`categories/${category}/teams/${teamName}`).update(updates).then(() => {
+    // Recalcular rankings e pontos
+    calculateRanking(category);
+    alert("Resultado salvo com sucesso!");
+  }).catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
-// Retornar pontos com base no rank
-function pontosPorPosicao(pos) {
-  if (pos === 1) return 100;
-  if (pos === 2) return 90;
-  if (pos === 3) return 85;
-  if (pos === 4) return 80;
-  if (pos === 5) return 75;
-  if (pos === 6) return 70;
-  if (pos === 7) return 65;
-  if (pos === 8) return 60;
-  if (pos === 9) return 55;
-  return 50;
+// Renderizar interface de administração
+function renderAdmin() {
+  const teamsList = document.getElementById("teamsList");
+
+  function loadTeams() {
+    db.ref("categories").once("value").then(snapshot => {
+      teamsList.innerHTML = "";
+      snapshot.forEach(cat => {
+        const category = cat.key;
+        cat.child("teams").forEach(teamSnap => {
+          const team = teamSnap.key;
+          const data = teamSnap.val();
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <h3>${team}</h3><p>${data.box} (${category})</p>
+            ${[1, 2, 3].map(i =>
+              `<input type="text" id="res-${category}-${team}-p${i}" 
+                value="${data['prova' + i]?.resultado ?? ''}" 
+                placeholder="Resultado P${i} (Ex: 02:54, 100kg, reps)">`
+            ).join('')}
+            <div class="btns">
+              <button onclick="saveResults('${category}', '${team}')">Salvar</button>
+              <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
+            </div>
+          `;
+          teamsList.appendChild(div);
+        });
+      });
+    });
+  }
+
+  // Função para deletar uma equipe
+  window.deleteTeam = function (category, team) {
+    if (confirm(`Remover ${team}?`)) {
+      db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
+    }
+  };
+
+  loadTeams();
 }
 
-// Chamar a função de inicialização ao carregar a página
+// Inicializar ao carregar a página
 window.onload = function () {
   initFirebase();
   setupTabs();
+  renderAdmin();
 };
