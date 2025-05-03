@@ -25,10 +25,87 @@ function convertToSeconds(time) {
     const seconds = parseInt(parts[1], 10);
     return minutes * 60 + seconds;
   }
-  return parseFloat(time); // Caso não seja mm:ss, retorna o valor original como número
+  return parseFloat(time); // Caso não seja mm:ss, retorna como número
 }
 
-// Função para carregar a página de administração
+// Função para calcular o ranking e os pontos
+async function calculateRanking(category) {
+  const teamsSnapshot = await db.ref(`categories/${category}/teams`).once("value");
+  const teams = [];
+  teamsSnapshot.forEach(teamSnap => {
+    const team = teamSnap.val();
+    team.name = teamSnap.key;
+    teams.push(team);
+  });
+
+  const provas = [1, 2, 3]; // Provas para processar
+  provas.forEach(prova => {
+    const teamsWithResults = teams.filter(team => team[`prova${prova}`]?.resultado != null);
+
+    // Converter resultados para segundos ou manter como número
+    teamsWithResults.forEach(team => {
+      const resultado = team[`prova${prova}`].resultado;
+      team[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
+        ? convertToSeconds(resultado) // Converte mm:ss para segundos
+        : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
+    });
+
+    // Ordenar por resultado (menor é melhor para tempo)
+    teamsWithResults.sort((a, b) =>
+      a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
+    );
+
+    // Atribuir rank e pontos
+    teamsWithResults.forEach((team, index) => {
+      const rank = index + 1;
+      const pontos = pontosPorPosicao(rank);
+
+      // Atualizar no Firebase
+      db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+        rank,
+        pontos
+      });
+    });
+  });
+}
+
+// Função para calcular os pontos com base na posição
+function pontosPorPosicao(pos) {
+  if (pos === 1) return 100;
+  if (pos === 2) return 90;
+  if (pos === 3) return 85;
+  if (pos === 4) return 80;
+  if (pos === 5) return 75;
+  if (pos === 6) return 70;
+  if (pos === 7) return 65;
+  if (pos === 8) return 60;
+  if (pos === 9) return 55;
+  return 50;
+}
+
+// Função para salvar resultados de uma equipe
+async function saveResults(category, teamName) {
+  const updates = {};
+  for (let i = 1; i <= 3; i++) {
+    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
+    if (!input) continue;
+
+    const val = input.value.trim();
+    if (val !== "") {
+      updates[`prova${i}/resultado`] = val;
+    }
+  }
+
+  // Atualizar resultados no Firebase
+  await db.ref(`categories/${category}/teams/${teamName}`).update(updates);
+
+  // Recalcular rankings e pontos
+  await calculateRanking(category);
+
+  alert("Resultado salvo com sucesso!");
+}
+
+// Função para carregar a interface de administração
 function renderAdmin() {
   const teamsList = document.getElementById("teamsList");
 
@@ -37,9 +114,9 @@ function renderAdmin() {
       teamsList.innerHTML = "";
       snapshot.forEach(cat => {
         const category = cat.key;
-        cat.child("teams").forEach(ts => {
-          const team = ts.key;
-          const data = ts.val();
+        cat.child("teams").forEach(teamSnap => {
+          const team = teamSnap.key;
+          const data = teamSnap.val();
           const div = document.createElement("div");
           div.className = "card";
           div.innerHTML = `
@@ -60,95 +137,12 @@ function renderAdmin() {
     });
   }
 
-  // Função para salvar resultados
-  window.saveResults = async function (category, team) {
-    const updates = {};
-    const provasSnap = await db.ref("provas").once("value");
-    const tipos = {};
-    provasSnap.forEach(p => tipos[p.key] = p.val().tipo);
-
-    for (let i = 1; i <= 3; i++) {
-      const input = document.getElementById(`res-${category}-${team}-p${i}`);
-      if (!input) continue;
-
-      const val = input.value.trim();
-      if (val !== "") {
-        updates[`prova${i}/resultado`] = val;
-      }
-    }
-
-    await db.ref(`categories/${category}/teams/${team}`).update(updates);
-
-    const snap = await db.ref(`categories/${category}/teams`).once("value");
-    const teams = [];
-    snap.forEach(ts => {
-      const t = ts.val();
-      t.name = ts.key;
-      t.category = category;
-      teams.push(t);
-    });
-
-    await calculateRanking(teams, category);
-    alert("Resultado salvo com sucesso!");
-    loadTeams();
-  };
-
-  // Função para deletar equipe
+  // Função para deletar uma equipe
   window.deleteTeam = function (category, team) {
     if (confirm(`Remover ${team}?`)) {
       db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
     }
   };
-
-  // Função para calcular o ranking e os pontos
-  async function calculateRanking(teams, category) {
-    const snapshot = await db.ref("provas").once("value");
-    const provas = {};
-    snapshot.forEach(p => provas[p.key] = p.val());
-
-    for (let prova = 1; prova <= 3; prova++) {
-      const tipo = provas[`prova${prova}`]?.tipo;
-      if (!tipo) continue;
-
-      const filtrados = teams.filter(t => t[`prova${prova}`]?.resultado != null);
-
-      filtrados.forEach(t => {
-        const resultado = t[`prova${prova}`]?.resultado || "0";
-        t[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
-          ? convertToSeconds(resultado) // Converte mm:ss para segundos
-          : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
-      });
-
-      // Ordenar os resultados (menor é melhor para tempo)
-      filtrados.sort((a, b) =>
-        a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
-      );
-
-      filtrados.forEach((team, i) => {
-        const rank = i + 1;
-        const pontos = pontosPorPosicao(rank);
-
-        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
-          rank,
-          pontos
-        });
-      });
-    }
-  }
-
-  // Função para calcular os pontos por posição
-  function pontosPorPosicao(pos) {
-    if (pos === 1) return 100;
-    if (pos === 2) return 90;
-    if (pos === 3) return 85;
-    if (pos === 4) return 80;
-    if (pos === 5) return 75;
-    if (pos === 6) return 70;
-    if (pos === 7) return 65;
-    if (pos === 8) return 60;
-    if (pos === 9) return 55;
-    return 50;
-  }
 
   loadTeams();
 }
