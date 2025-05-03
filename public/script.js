@@ -34,7 +34,7 @@ function renderAdmin() {
           div.innerHTML = `
             <h3>${team}</h3><p>${data.box} (${category})</p>
             ${[1, 2, 3].map(i =>
-              `<input type="text" id="res-${category}-${team}-p${i}" value="${data['prova' + i]?.resultado ?? ''}" placeholder="Resultado P${i}">`
+              `<input type="text" id="res-${category}-${team}-p${i}" value="${data['prova' + i]?.resultado ?? ''}" placeholder="Resultado P${i} (Ex: 02:54 ou 100kg ou reps)">`
             ).join('')}
             <div class="btns">
               <button onclick="saveResults('${category}', '${team}')">Salvar</button>
@@ -63,11 +63,23 @@ function renderAdmin() {
         const tipo = tipos['prova' + i];
 
         if (tipo === "FOR TIME") {
-          updates[`prova${i}/resultado`] = val; // salva como string ex: "05:22"
+          // Tratar entrada de tempo no formato MM:SS
+          const timeParts = val.split(":").map(Number);
+          if (timeParts.length === 2) {
+            const seconds = timeParts[0] * 60 + timeParts[1]; // Converter minutos e segundos para segundos totais
+            updates[`prova${i}/resultado`] = seconds; // Salvar o tempo em segundos no Firebase
+          } else {
+            alert(`Por favor, insira um tempo válido no formato MM:SS para a Prova ${i}`);
+            return;
+          }
         } else {
+          // Tratar entradas numéricas para outros tipos de provas
           const parsed = parseFloat(val.replace(",", "."));
           if (!isNaN(parsed)) {
             updates[`prova${i}/resultado`] = parsed;
+          } else {
+            alert(`Por favor, insira um valor válido para a Prova ${i}`);
+            return;
           }
         }
       }
@@ -140,16 +152,7 @@ async function calculateRanking(teams) {
 
     filtrados.forEach(t => {
       const res = t['prova' + prova].resultado;
-      let convertido;
-
-      if (tipo === "FOR TIME" && typeof res === "string" && res.includes(":")) {
-        const [min, sec] = res.split(":").map(Number);
-        convertido = min * 60 + sec;
-      } else {
-        convertido = parseFloat(res);
-      }
-
-      t['prova' + prova].resultado_convertido = convertido;
+      t['prova' + prova].resultado_convertido = tipo === "FOR TIME" ? res : parseFloat(res);
     });
 
     filtrados.sort((a, b) =>
