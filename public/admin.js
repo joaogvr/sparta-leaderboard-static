@@ -81,7 +81,7 @@ function saveResults(category, teamName) {
     .catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
-// Calcular ranking e pontos
+// Calcular ranking, pontos e total
 function calculateRanking(category) {
   db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
     const teams = [];
@@ -118,7 +118,7 @@ function calculateRanking(category) {
         (team.prova2?.pontos || 0) +
         (team.prova3?.pontos || 0);
 
-      db.ref(`categories/${category}/teams/${team.name}`).update({ total });
+      db.ref(`categories/${category}/teams/${team.name}`).update({ total }).catch(err => console.error("Erro ao atualizar total:", err));
     });
   });
 }
