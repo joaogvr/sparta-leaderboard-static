@@ -17,83 +17,26 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// Adicionar uma nova dupla
-function addTeam(event) {
-  event.preventDefault(); // Previne o reload da página
-
-  const teamNameInput = document.getElementById("teamName");
-  const boxNameInput = document.getElementById("boxName");
-  const categorySelect = document.getElementById("category");
-
-  const teamName = teamNameInput.value.trim();
-  const box = boxNameInput.value.trim();
-  const category = categorySelect.value;
-
-  if (!teamName || !box || !category) {
-    alert("Por favor, preencha todos os campos para adicionar uma nova dupla.");
-    return;
-  }
-
-  const newTeamData = {
-    box,
-    prova1: { resultado: "", rank: null, pontos: null },
-    prova2: { resultado: "", rank: null, pontos: null },
-    prova3: { resultado: "", rank: null, pontos: null },
-    total: 0
-  };
-
-  db.ref(`categories/${category}/teams/${teamName}`)
-    .set(newTeamData)
-    .then(() => {
-      alert("Dupla adicionada com sucesso!");
-      teamNameInput.value = ""; // Limpa o campo de entrada
-      boxNameInput.value = ""; // Limpa o campo de entrada
-      renderAdmin(); // Atualiza a lista de equipes
-    })
-    .catch((err) => {
-      console.error("Erro ao adicionar nova dupla:", err);
-      alert("Ocorreu um erro ao adicionar a nova dupla. Verifique o console para mais detalhes.");
+// Configurar os tabs de categorias
+function setupTabs() {
+  const tabsDiv = document.getElementById("tabs");
+  db.ref("categories").once("value").then(snapshot => {
+    tabsDiv.innerHTML = ""; // Limpa tabs existentes
+    snapshot.forEach(category => {
+      const categoryName = category.key;
+      const tab = document.createElement("div");
+      tab.className = "tab";
+      tab.textContent = categoryName;
+      tab.onclick = () => renderLeaderboard(categoryName);
+      tabsDiv.appendChild(tab);
     });
-}
 
-// Cadastrar uma nova prova
-function addProva(event) {
-  event.preventDefault(); // Previne o reload da página
-
-  const provaInput = document.getElementById("provaInput");
-  const tipoProvaInput = document.getElementById("tipoProvaInput");
-
-  const provaName = provaInput.value.trim();
-  const provaType = tipoProvaInput.value;
-
-  if (!provaName || !provaType) {
-    alert("Por favor, preencha todos os campos para cadastrar uma nova prova.");
-    return;
-  }
-
-  db.ref("provas")
-    .once("value")
-    .then((snapshot) => {
-      const provasCount = snapshot.numChildren();
-      const newProvaKey = `prova${provasCount + 1}`;
-
-      const newProvaData = {
-        nome: provaName,
-        tipo: provaType
-      };
-
-      db.ref(`provas/${newProvaKey}`)
-        .set(newProvaData)
-        .then(() => {
-          alert("Prova cadastrada com sucesso!");
-          provaInput.value = ""; // Limpa o campo de entrada
-          renderAdmin(); // Atualiza a lista de provas
-        })
-        .catch((err) => {
-          console.error("Erro ao cadastrar nova prova:", err);
-          alert("Ocorreu um erro ao cadastrar a nova prova. Verifique o console para mais detalhes.");
-        });
-    });
+    // Ativar o primeiro tab por padrão
+    if (tabsDiv.firstChild) {
+      tabsDiv.firstChild.classList.add("active");
+      renderLeaderboard(snapshot.val() ? Object.keys(snapshot.val())[0] : null);
+    }
+  });
 }
 
 // Renderizar o leaderboard para uma categoria
