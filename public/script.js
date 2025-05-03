@@ -17,26 +17,83 @@ function initFirebase() {
   db = firebase.database();
 }
 
-// Configurar os tabs de categorias
-function setupTabs() {
-  const tabsDiv = document.getElementById("tabs");
-  db.ref("categories").once("value").then(snapshot => {
-    tabsDiv.innerHTML = ""; // Limpa tabs existentes
-    snapshot.forEach(category => {
-      const categoryName = category.key;
-      const tab = document.createElement("div");
-      tab.className = "tab";
-      tab.textContent = categoryName;
-      tab.onclick = () => renderLeaderboard(categoryName);
-      tabsDiv.appendChild(tab);
-    });
+// Adicionar uma nova dupla
+function addTeam(event) {
+  event.preventDefault(); // Previne o reload da página
 
-    // Ativar o primeiro tab por padrão
-    if (tabsDiv.firstChild) {
-      tabsDiv.firstChild.classList.add("active");
-      renderLeaderboard(snapshot.val() ? Object.keys(snapshot.val())[0] : null);
-    }
-  });
+  const teamNameInput = document.getElementById("teamName");
+  const boxNameInput = document.getElementById("boxName");
+  const categorySelect = document.getElementById("category");
+
+  const teamName = teamNameInput.value.trim();
+  const box = boxNameInput.value.trim();
+  const category = categorySelect.value;
+
+  if (!teamName || !box || !category) {
+    alert("Por favor, preencha todos os campos para adicionar uma nova dupla.");
+    return;
+  }
+
+  const newTeamData = {
+    box,
+    prova1: { resultado: "", rank: null, pontos: null },
+    prova2: { resultado: "", rank: null, pontos: null },
+    prova3: { resultado: "", rank: null, pontos: null },
+    total: 0
+  };
+
+  db.ref(`categories/${category}/teams/${teamName}`)
+    .set(newTeamData)
+    .then(() => {
+      alert("Dupla adicionada com sucesso!");
+      teamNameInput.value = ""; // Limpa o campo de entrada
+      boxNameInput.value = ""; // Limpa o campo de entrada
+      renderAdmin(); // Atualiza a lista de equipes
+    })
+    .catch((err) => {
+      console.error("Erro ao adicionar nova dupla:", err);
+      alert("Ocorreu um erro ao adicionar a nova dupla. Verifique o console para mais detalhes.");
+    });
+}
+
+// Cadastrar uma nova prova
+function addProva(event) {
+  event.preventDefault(); // Previne o reload da página
+
+  const provaInput = document.getElementById("provaInput");
+  const tipoProvaInput = document.getElementById("tipoProvaInput");
+
+  const provaName = provaInput.value.trim();
+  const provaType = tipoProvaInput.value;
+
+  if (!provaName || !provaType) {
+    alert("Por favor, preencha todos os campos para cadastrar uma nova prova.");
+    return;
+  }
+
+  db.ref("provas")
+    .once("value")
+    .then((snapshot) => {
+      const provasCount = snapshot.numChildren();
+      const newProvaKey = `prova${provasCount + 1}`;
+
+      const newProvaData = {
+        nome: provaName,
+        tipo: provaType
+      };
+
+      db.ref(`provas/${newProvaKey}`)
+        .set(newProvaData)
+        .then(() => {
+          alert("Prova cadastrada com sucesso!");
+          provaInput.value = ""; // Limpa o campo de entrada
+          renderAdmin(); // Atualiza a lista de provas
+        })
+        .catch((err) => {
+          console.error("Erro ao cadastrar nova prova:", err);
+          alert("Ocorreu um erro ao cadastrar a nova prova. Verifique o console para mais detalhes.");
+        });
+    });
 }
 
 // Renderizar o leaderboard para uma categoria
@@ -51,10 +108,23 @@ function renderLeaderboard(category) {
       return;
     }
 
+    // Transformar os dados em uma lista e calcular o total
+    const teamList = Object.entries(teams).map(([teamName, teamData]) => {
+      const total = 
+        (teamData.prova1?.pontos || 0) +
+        (teamData.prova2?.pontos || 0) +
+        (teamData.prova3?.pontos || 0);
+      return { teamName, ...teamData, total };
+    });
+
+    // Ordenar a lista pelo total em ordem decrescente
+    teamList.sort((a, b) => b.total - a.total);
+
     // Cabeçalho da tabela
     let table = `<table>
       <thead>
         <tr>
+          <th>Rank</th>
           <th>Dupla</th>
           <th>Box</th>
           <th>P1 Resultado</th>
@@ -70,22 +140,23 @@ function renderLeaderboard(category) {
         </tr>
       </thead>
       <tbody>`;
-    
+
     // Preenchendo os dados da tabela
-    Object.entries(teams).forEach(([teamName, teamData]) => {
+    teamList.forEach((team, index) => {
       table += `<tr>
-        <td>${teamName}</td>
-        <td>${teamData.box || '-'}</td>
-        <td>${teamData.prova1?.resultado || '-'}</td>
-        <td>${teamData.prova1?.rank || '-'}</td>
-        <td>${teamData.prova1?.pontos || '-'}</td>
-        <td>${teamData.prova2?.resultado || '-'}</td>
-        <td>${teamData.prova2?.rank || '-'}</td>
-        <td>${teamData.prova2?.pontos || '-'}</td>
-        <td>${teamData.prova3?.resultado || '-'}</td>
-        <td>${teamData.prova3?.rank || '-'}</td>
-        <td>${teamData.prova3?.pontos || '-'}</td>
-        <td>${teamData.total || '-'}</td>
+        <td>${index + 1}</td>
+        <td>${team.teamName}</td>
+        <td>${team.box || '-'}</td>
+        <td>${team.prova1?.resultado || '-'}</td>
+        <td>${team.prova1?.rank || '-'}</td>
+        <td>${team.prova1?.pontos || '-'}</td>
+        <td>${team.prova2?.resultado || '-'}</td>
+        <td>${team.prova2?.rank || '-'}</td>
+        <td>${team.prova2?.pontos || '-'}</td>
+        <td>${team.prova3?.resultado || '-'}</td>
+        <td>${team.prova3?.rank || '-'}</td>
+        <td>${team.prova3?.pontos || '-'}</td>
+        <td>${team.total}</td>
       </tr>`;
     });
 
@@ -101,7 +172,29 @@ function renderLeaderboard(category) {
   });
 }
 
-// Função para calcular os ranks e pontos
+// Salvar resultados de uma equipe
+function saveResults(category, teamName) {
+  const updates = {};
+  for (let i = 1; i <= 3; i++) {
+    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
+    if (!input) continue;
+
+    const val = input.value.trim();
+    if (val !== "") {
+      updates[`prova${i}/resultado`] = val;
+    }
+  }
+
+  db.ref(`categories/${category}/teams/${teamName}`)
+    .update(updates)
+    .then(() => {
+      calculateRanking(category);
+      alert("Resultado salvo com sucesso!");
+    })
+    .catch(err => console.error("Erro ao salvar resultados:", err));
+}
+
+// Calcular o ranking e pontos
 function calculateRanking(category) {
   db.ref(`categories/${category}/teams`).once("value").then(snapshot => {
     const teams = [];
@@ -226,28 +319,6 @@ function renderAdmin(initialLoad = false) {
   }
 
   loadTeams();
-}
-
-// Salvar resultados de uma equipe
-function saveResults(category, teamName) {
-  const updates = {};
-  for (let i = 1; i <= 3; i++) {
-    const input = document.getElementById(`res-${category}-${teamName}-p${i}`);
-    if (!input) continue;
-
-    const val = input.value.trim();
-    if (val !== "") {
-      updates[`prova${i}/resultado`] = val;
-    }
-  }
-
-  db.ref(`categories/${category}/teams/${teamName}`)
-    .update(updates)
-    .then(() => {
-      calculateRanking(category);
-      alert("Resultado salvo com sucesso!");
-    })
-    .catch(err => console.error("Erro ao salvar resultados:", err));
 }
 
 // Inicializar ao carregar a página
