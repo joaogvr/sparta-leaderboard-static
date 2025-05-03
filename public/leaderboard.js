@@ -53,7 +53,11 @@ function renderLeaderboard(category) {
 
     // Transformar os dados em uma lista
     const teamList = Object.entries(teams).map(([teamName, teamData]) => {
-      return { teamName, ...teamData };
+      const total = 
+        (teamData.prova1?.pontos || 0) +
+        (teamData.prova2?.pontos || 0) +
+        (teamData.prova3?.pontos || 0);
+      return { teamName, ...teamData, total };
     });
 
     // Ordenar a lista pelo total em ordem decrescente
