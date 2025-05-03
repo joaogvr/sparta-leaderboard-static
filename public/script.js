@@ -1,4 +1,4 @@
-// O conteúdo completo do JavaScript será inserido na próxima etapa// Configuração do Firebase
+// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyCDaOdD62oFnLCY06L29w17sF5MhCV_fvA",
   authDomain: "leaderboard-sparta.firebaseapp.com",
@@ -15,6 +15,17 @@ let db;
 function initFirebase() {
   const app = firebase.initializeApp(firebaseConfig);
   db = firebase.database();
+}
+
+// Função para converter mm:ss para segundos
+function convertToSeconds(time) {
+  const parts = time.split(":");
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10);
+    const seconds = parseInt(parts[1], 10);
+    return minutes * 60 + seconds;
+  }
+  return parseFloat(time); // Caso não seja mm:ss, retorna o valor original como número
 }
 
 // Função para carregar a página de administração
@@ -89,78 +100,57 @@ function renderAdmin() {
     }
   };
 
-  // Adicionar nova equipe
-  document.getElementById("addForm").onsubmit = e => {
-    e.preventDefault();
-    const team = document.getElementById("teamName").value.trim();
-    const box = document.getElementById("boxName").value.trim();
-    const cat = document.getElementById("category").value;
-    if (!team || !box || !cat) return alert("Preencha todos os campos");
-    db.ref(`categories/${cat}/teams/${team}`).set({ box }).then(() => {
-      alert("Dupla adicionada");
-      e.target.reset();
-      loadTeams();
-    });
-  };
+  // Função para calcular o ranking e os pontos
+  async function calculateRanking(teams, category) {
+    const snapshot = await db.ref("provas").once("value");
+    const provas = {};
+    snapshot.forEach(p => provas[p.key] = p.val());
 
-  // Adicionar nova prova
-  document.getElementById("provaForm").onsubmit = e => {
-    e.preventDefault();
-    const nome = document.getElementById("provaInput").value.trim();
-    const tipo = document.getElementById("tipoProvaInput").value;
-    if (!nome || !tipo) return alert("Preencha tudo");
-    const id = `prova${Date.now()}`;
-    db.ref(`provas/${id}`).set({ nome, tipo }).then(() => {
-      alert("Prova cadastrada");
-      e.target.reset();
-    });
-  };
+    for (let prova = 1; prova <= 3; prova++) {
+      const tipo = provas[`prova${prova}`]?.tipo;
+      if (!tipo) continue;
+
+      const filtrados = teams.filter(t => t[`prova${prova}`]?.resultado != null);
+
+      filtrados.forEach(t => {
+        const resultado = t[`prova${prova}`]?.resultado || "0";
+        t[`prova${prova}`].resultado_convertido = /^\d{2}:\d{2}$/.test(resultado)
+          ? convertToSeconds(resultado) // Converte mm:ss para segundos
+          : parseFloat(resultado); // Usa o valor diretamente se não for mm:ss
+      });
+
+      // Ordenar os resultados (menor é melhor para tempo)
+      filtrados.sort((a, b) =>
+        a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
+      );
+
+      filtrados.forEach((team, i) => {
+        const rank = i + 1;
+        const pontos = pontosPorPosicao(rank);
+
+        db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
+          rank,
+          pontos
+        });
+      });
+    }
+  }
+
+  // Função para calcular os pontos por posição
+  function pontosPorPosicao(pos) {
+    if (pos === 1) return 100;
+    if (pos === 2) return 90;
+    if (pos === 3) return 85;
+    if (pos === 4) return 80;
+    if (pos === 5) return 75;
+    if (pos === 6) return 70;
+    if (pos === 7) return 65;
+    if (pos === 8) return 60;
+    if (pos === 9) return 55;
+    return 50;
+  }
 
   loadTeams();
-}
-
-// Função para calcular o ranking e os pontos
-async function calculateRanking(teams, category) {
-  const snapshot = await db.ref("provas").once("value");
-  const provas = {};
-  snapshot.forEach(p => provas[p.key] = p.val());
-
-  for (let prova = 1; prova <= 3; prova++) {
-    const tipo = provas[`prova${prova}`]?.tipo;
-    if (!tipo) continue;
-
-    const filtrados = teams.filter(t => t[`prova${prova}`]?.resultado != null);
-
-    filtrados.sort((a, b) => {
-      const resA = parseFloat(a[`prova${prova}`].resultado);
-      const resB = parseFloat(b[`prova${prova}`].resultado);
-      return resA - resB; // Ordenar em ordem crescente
-    });
-
-    filtrados.forEach((team, i) => {
-      const rank = i + 1;
-      const pontos = pontosPorPosicao(rank);
-
-      db.ref(`categories/${category}/teams/${team.name}/prova${prova}`).update({
-        rank,
-        pontos
-      });
-    });
-  }
-}
-
-// Função para calcular os pontos por posição
-function pontosPorPosicao(pos) {
-  if (pos === 1) return 100;
-  if (pos === 2) return 90;
-  if (pos === 3) return 85;
-  if (pos === 4) return 80;
-  if (pos === 5) return 75;
-  if (pos === 6) return 70;
-  if (pos === 7) return 65;
-  if (pos === 8) return 60;
-  if (pos === 9) return 55;
-  return 50;
 }
 
 // Inicializar ao carregar a página
