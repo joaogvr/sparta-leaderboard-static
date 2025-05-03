@@ -230,11 +230,15 @@ window.saveResults = async function(category, team) {
   provasSnap.forEach(p => tipos[p.key] = p.val().tipo);
 
   for (let i = 1; i <= 3; i++) {
-    const val = document.getElementById(`res-${category}-${team}-p${i}`).value.trim();
+    const input = document.getElementById(`res-${category}-${team}-p${i}`);
+    if (!input) continue;
+
+    const val = input.value.trim();
     if (val !== "") {
       const tipo = tipos['prova' + i];
+
       if (tipo === "FOR TIME") {
-        updates[`prova${i}/resultado`] = val; // mantém como string (ex: "05:22")
+        updates[`prova${i}/resultado`] = val; // salva como string ex: "05:22"
       } else {
         const parsed = parseFloat(val.replace(",", "."));
         if (!isNaN(parsed)) {
@@ -246,7 +250,6 @@ window.saveResults = async function(category, team) {
 
   await db.ref(`categories/${category}/teams/${team}`).update(updates);
 
-  // Recarrega times e recalcula ranking
   const snap = await db.ref(`categories/${category}/teams`).once("value");
   const teams = [];
   snap.forEach(ts => {
@@ -257,10 +260,10 @@ window.saveResults = async function(category, team) {
   });
 
   await calculateRanking(teams);
-
-  alert("Resultado salvo com sucesso!"); // Reexibe pop-up
-  renderAdmin(true); // Atualiza a interface
+  alert("Resultado salvo com sucesso!");
+  renderAdmin(true);
 };
+
 
 
   window.deleteTeam = function(category, team) {
