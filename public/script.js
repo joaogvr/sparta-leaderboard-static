@@ -74,22 +74,22 @@ function renderGeral() {
     calculateRanking(all).then(teams => {
       let html = "<table><thead><tr><th>Dupla</th><th>Box</th><th>Categoria</th>";
       for (let i = 1; i <= 3; i++) {
-        html += `<th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>`;
+        html += <th>P${i} Resultado</th><th>P${i} Rank</th><th>P${i} Pontos</th>;
       }
       html += "<th>Total</th></tr></thead><tbody>";
       teams.forEach((t, i) => {
         const medalha = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
-        html += `<tr><td>${medalha} ${t.name}</td><td>${t.box}</td><td>${t.category}</td>`;
+        html += <tr><td>${medalha} ${t.name}</td><td>${t.box}</td><td>${t.category}</td>;
         for (let p = 1; p <= 3; p++) {
-          let r = t[`prova${p}`]?.resultado ?? '-';
-          if (typeof r === "number" && (provas[`prova${p}`]?.tipo === "FOR TIME")) {
+          let r = t[prova${p}]?.resultado ?? '-';
+          if (typeof r === "number" && (provas[prova${p}]?.tipo === "FOR TIME")) {
             const min = Math.floor(r / 60);
             const sec = String(r % 60).padStart(2, '0');
-            r = `${min}:${sec}`;
+            r = ${min}:${sec};
           }
-          html += `<td>${r}</td><td>${t[`prova${p}`]?.rank ?? '-'}</td><td>${t[`prova${p}`]?.pontos ?? '-'}</td>`;
+          html += <td>${r}</td><td>${t[prova${p}]?.rank ?? '-'}</td><td>${t[prova${p}]?.pontos ?? '-'}</td>;
         }
-        html += `<td>${t.total ?? '-'}</td></tr>`;
+        html += <td>${t.total ?? '-'}</td></tr>;
       });
       html += "</tbody></table>";
       document.getElementById("leaderboard").innerHTML = html;
@@ -103,13 +103,13 @@ function calculateRanking(teams) {
     snapshot.forEach(p => provas[p.key] = p.val());
 
     for (let prova = 1; prova <= 3; prova++) {
-      const tipo = provas[`prova${prova}`]?.tipo;
+      const tipo = provas[prova${prova}]?.tipo;
       if (!tipo) continue;
 
-      const filtrados = teams.filter(t => t[`prova${prova}`]?.resultado != null);
+      const filtrados = teams.filter(t => t[prova${prova}]?.resultado != null);
 
       filtrados.forEach(t => {
-        const res = t[`prova${prova}`].resultado;
+        const res = t[prova${prova}].resultado;
         let convertido;
         if (tipo === "FOR TIME" && typeof res === "string" && res.includes(":")) {
           const [min, sec] = res.split(":").map(Number);
@@ -117,28 +117,28 @@ function calculateRanking(teams) {
         } else {
           convertido = parseFloat(res);
         }
-        t[`prova${prova}`].resultado_convertido = convertido;
+        t[prova${prova}].resultado_convertido = convertido;
       });
 
       filtrados.sort((a, b) =>
         tipo === "FOR TIME"
-          ? a[`prova${prova}`].resultado_convertido - b[`prova${prova}`].resultado_convertido
-          : b[`prova${prova}`].resultado_convertido - a[`prova${prova}`].resultado_convertido
+          ? a[prova${prova}].resultado_convertido - b[prova${prova}].resultado_convertido
+          : b[prova${prova}].resultado_convertido - a[prova${prova}].resultado_convertido
       );
 
       filtrados.forEach((team, i) => {
-        team[`prova${prova}`].rank = i + 1;
-        team[`prova${prova}`].pontos = pontosPorPosicao(i + 1);
-        db.ref(`categories/${team.category}/teams/${team.name}/prova${prova}`).update({
+        team[prova${prova}].rank = i + 1;
+        team[prova${prova}].pontos = pontosPorPosicao(i + 1);
+        db.ref(categories/${team.category}/teams/${team.name}/prova${prova}).update({
           rank: i + 1,
-          pontos: team[`prova${prova}`].pontos
+          pontos: team[prova${prova}].pontos
         });
       });
     }
 
     teams.forEach(t => {
-      t.total = [1, 2, 3].reduce((sum, i) => sum + (t[`prova${i}`]?.pontos ?? 0), 0);
-      db.ref(`categories/${t.category}/teams/${t.name}`).update({ total: t.total });
+      t.total = [1, 2, 3].reduce((sum, i) => sum + (t[prova${i}]?.pontos ?? 0), 0);
+      db.ref(categories/${t.category}/teams/${t.name}).update({ total: t.total });
     });
 
     teams.sort((a, b) => b.total - a.total);
@@ -159,14 +159,14 @@ function renderAdmin() {
           const data = ts.val();
           const div = document.createElement("div");
           div.className = "card";
-          div.innerHTML = `
+          div.innerHTML = 
             <h3>${team}</h3><p>${data.box} (${category})</p>
             ${[1,2,3].map(i =>
-              `<input type="text" id="res-${category}-${team}-p${i}" value="${data['prova'+i]?.resultado ?? ''}" placeholder="Resultado P${i}">`
+              <input type="text" id="res-${category}-${team}-p${i}" value="${data['prova'+i]?.resultado ?? ''}" placeholder="Resultado P${i}">
             ).join('')}
             <button onclick="saveResults('${category}', '${team}')">Salvar</button>
             <button onclick="deleteTeam('${category}', '${team}')" style="background: darkred;">Excluir</button>
-          `;
+          ;
           teamsList.appendChild(div);
         });
       });
@@ -180,33 +180,33 @@ window.saveResults = async function(category, team) {
   provasSnap.forEach(p => tipos[p.key] = p.val().tipo);
 
   for (let i = 1; i <= 3; i++) {
-    const input = document.getElementById(`res-${category}-${team}-p${i}`);
+    const input = document.getElementById(res-${category}-${team}-p${i});
     if (!input) continue;
 
     const val = input.value.trim();
-    const tipo = tipos[`prova${i}`];
+    const tipo = tipos[prova${i}];
 
     if (val !== "") {
       if (tipo === "FOR TIME") {
         // Valida se está no formato correto mm:ss
         const regex = /^\d{1,2}:\d{2}$/;
         if (!regex.test(val)) {
-          alert(`Formato inválido para FOR TIME na Prova ${i}. Use mm:ss.`);
+          alert(Formato inválido para FOR TIME na Prova ${i}. Use mm:ss.);
           return;
         }
-        updates[`prova${i}/resultado`] = val;  // salva como string
+        updates[prova${i}/resultado] = val;  // salva como string
       } else {
         const parsed = parseFloat(val.replace(",", "."));
         if (!isNaN(parsed)) {
-          updates[`prova${i}/resultado`] = parsed;
+          updates[prova${i}/resultado] = parsed;
         }
       }
     }
   }
 
-  await db.ref(`categories/${category}/teams/${team}`).update(updates);
+  await db.ref(categories/${category}/teams/${team}).update(updates);
 
-  const snap = await db.ref(`categories/${category}/teams`).once("value");
+  const snap = await db.ref(categories/${category}/teams).once("value");
   const teams = [];
   snap.forEach(ts => {
     const t = ts.val();
@@ -221,8 +221,8 @@ window.saveResults = async function(category, team) {
 };
 
   window.deleteTeam = function(category, team) {
-    if (confirm(`Remover ${team}?`)) {
-      db.ref(`categories/${category}/teams/${team}`).remove().then(loadTeams);
+    if (confirm(Remover ${team}?)) {
+      db.ref(categories/${category}/teams/${team}).remove().then(loadTeams);
     }
   };
 
@@ -232,7 +232,7 @@ window.saveResults = async function(category, team) {
     const box = document.getElementById("boxName").value.trim();
     const cat = document.getElementById("category").value;
     if (!team || !box || !cat) return alert("Preencha todos os campos");
-    db.ref(`categories/${cat}/teams/${team}`).set({ box }).then(() => {
+    db.ref(categories/${cat}/teams/${team}).set({ box }).then(() => {
       alert("Dupla adicionada");
       e.target.reset();
       loadTeams();
@@ -244,8 +244,8 @@ window.saveResults = async function(category, team) {
     const nome = document.getElementById("provaInput").value.trim();
     const tipo = document.getElementById("tipoProvaInput").value;
     if (!nome || !tipo) return alert("Preencha tudo");
-    const id = `prova${Date.now()}`;
-    db.ref(`provas/${id}`).set({ nome, tipo }).then(() => {
+    const id = prova${Date.now()};
+    db.ref(provas/${id}).set({ nome, tipo }).then(() => {
       alert("Prova cadastrada");
       e.target.reset();
     });
@@ -263,7 +263,7 @@ function renderWorkouts() {
       const d = p.val();
       const div = document.createElement("div");
       div.className = "workout";
-      div.innerHTML = `<h2>${d.nome}</h2><p>Tipo: ${d.tipo}</p>`;
+      div.innerHTML = <h2>${d.nome}</h2><p>Tipo: ${d.tipo}</p>;
       workoutsList.appendChild(div);
     });
   });
