@@ -90,10 +90,10 @@ function renderLeaderboard(category) {
         <td>${index + 1}</td>
         <td>${team.teamName}</td>
         <td>${team.box || '-'}</td>
-        <td>${team.prova1?.resultado ? `${team.prova1.resultado} REPS` : '-'}</td>
+        <td>${team.prova1?.resultado ? `${team.prova1.resultado} reps` : '-'}</td>
         <td>${team.prova1?.rank || '-'}</td>
         <td>${team.prova1?.pontos || '-'}</td>
-        <td>${team.prova2?.resultado ? `${team.prova2.resultado} KG` : '-'}</td>
+        <td>${team.prova2?.resultado ? `${team.prova2.resultado} kg` : '-'}</td>
         <td>${team.prova2?.rank || '-'}</td>
         <td>${team.prova2?.pontos || '-'}</td>
         <td>${team.prova3?.resultado || '-'}</td>
