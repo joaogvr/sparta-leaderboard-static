@@ -98,8 +98,20 @@ function calculateRanking(category) {
         return resultado !== null && resultado !== "";
       });
 
-      // Ordenar os resultados (convertendo para número quando necessário)
-      teamsWithResults.sort((a, b) => parseFloat(a[`prova${prova}`].resultado) - parseFloat(b[`prova${prova}`].resultado));
+      // Ordenar os resultados
+      teamsWithResults.sort((a, b) => {
+        const resultadoA = parseFloat(a[`prova${prova}`].resultado);
+        const resultadoB = parseFloat(b[`prova${prova}`].resultado);
+
+        // Regras de ordenação:
+        // - Prova 1 e Prova 2: Maior é melhor
+        // - Prova 3: Menor é melhor
+        if (prova === 3) {
+          return resultadoA - resultadoB; // Menor é melhor
+        } else {
+          return resultadoB - resultadoA; // Maior é melhor
+        }
+      });
 
       // Atribuir rank e pontos
       teamsWithResults.forEach((team, index) => {
